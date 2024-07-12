@@ -1,9 +1,9 @@
 import { Sacrament } from "../models/sacrament.model.js";
 
-const locationResolvers = {
+const sacramentResolvers = {
   Query: {
-    locations: async () => await Sacrament.find(),
-    sacrament: async (_: any, { id }: { id: string }) => await Sacrament.findById(id),
+    getSacraments: async () => await Sacrament.find(),
+    getSacrament: async (_: any, { id }: { id: string }) => await Sacrament.findById(id),
   },
   Mutation: {
     createSacrament: async (_: any, { name }: { name: string }) => {
@@ -20,4 +20,4 @@ const locationResolvers = {
   },
 };
 
-export default locationResolvers;
+export default sacramentResolvers;

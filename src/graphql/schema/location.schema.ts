@@ -5,8 +5,8 @@ export const locationTypeDefs = `#graphql
   }
 
   extend type Query {
-    locations: [Location]
-    location(id: ID!): Location
+    getLocations: [Location]
+    getLocation(id: ID!): Location
   }
 
   extend type Mutation {

@@ -5,8 +5,8 @@ export const sacramentTypeDefs = `#graphql
   }
 
   extend type Query {
-    sacraments: [Sacrament]
-    sacrament(id: ID!): Sacrament
+    getSacraments: [Sacrament]
+    getSacrament(id: ID!): Sacrament
   }
 
   extend type Mutation {

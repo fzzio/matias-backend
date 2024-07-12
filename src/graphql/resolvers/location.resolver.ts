@@ -2,8 +2,8 @@ import { Location } from "../models/location.model.js";
 
 const locationResolvers = {
   Query: {
-    locations: async () => await Location.find(),
-    location: async (_: any, { id }: { id: string }) => await Location.findById(id),
+    getLocations: async () => await Location.find(),
+    getLocation: async (_: any, { id }: { id: string }) => await Location.findById(id),
   },
   Mutation: {
     createLocation: async (_: any, { name }: { name: string }) => {
