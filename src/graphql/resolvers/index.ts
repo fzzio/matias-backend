@@ -1,4 +1,4 @@
-import locationResolvers from "./locationResolvers.js";
+import locationResolvers from "./location.resolver.js";
 
 export const resolvers = {
   Query: {

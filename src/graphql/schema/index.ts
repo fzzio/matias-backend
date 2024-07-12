@@ -1,5 +1,5 @@
-import { locationTypeDefs } from "./location.js";
-import { sacramentTypeDefs } from "./sacrament.js";
+import { locationTypeDefs } from "./location.schema.js";
+import { sacramentTypeDefs } from "./sacrament.schema.js";
 
 const rootTypeDefs = `#graphql
   type Query {
@@ -16,5 +16,3 @@ export const typeDefs = `#graphql
   ${locationTypeDefs}
   ${sacramentTypeDefs}
 `;
-
-// export const typeDefs = [rootTypeDefs, locationTypeDefs, sacramentTypeDefs];
