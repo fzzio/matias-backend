@@ -5,8 +5,6 @@ const personResolvers = {
     getPeople: async () => await Person.find().populate("sacraments"),
     getPerson: async (_: any, { id }: { id: string }) => await Person.findById(id).populate("sacraments"),
     getPersonByIdCard: async (_: any, { idCard }: { idCard: string }) => await Person.findOne({ idCard }).populate("sacraments"),
-    getCatechists: async () => await Person.find({ isCatechist: true }).populate("sacraments"),
-    getCatechizands: async () => await Person.find({ isCatechist: false }).populate("sacraments"),
   },
   Mutation: {
     createPerson: async (_: any, { input }: { input: PersonInput }) => {
@@ -27,8 +25,13 @@ const personResolvers = {
     removeSacramentFromPerson: async (_: any, { personId, sacramentId }: { personId: string; sacramentId: string }) => {
       return await Person.findByIdAndUpdate(personId, { $pull: { sacraments: sacramentId } }, { new: true }).populate("sacraments");
     },
-    setCatechistStatus: async (_: any, { personId, isCatechist }: { personId: string; isCatechist: boolean }) => {
-      return await Person.findByIdAndUpdate(personId, { isCatechist }, { new: true }).populate("sacraments");
+    createPeopleBulk: async (_: any, { input }: { input: PersonInput[] }) => {
+      const people = await Person.insertMany(input);
+      return people;
+    },
+    deletePeopleBulk: async (_: any, { ids }: { ids: string[] }) => {
+      const result = await Person.deleteMany({ _id: { $in: ids } });
+      return result.deletedCount;
     },
   },
 };
@@ -41,7 +44,6 @@ export interface PersonInput {
   phone?: string;
   birthDate?: Date;
   sacraments?: string[];
-  isCatechist?: boolean;
 }
 
 export default personResolvers;

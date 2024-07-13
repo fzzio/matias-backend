@@ -8,7 +8,6 @@ export const personTypeDefs = `#graphql
     phone: String
     birthDate: String
     sacraments: [Sacrament!]
-    isCatechist: Boolean!
     createdAt: String
     updatedAt: String
   }
@@ -21,23 +20,21 @@ export const personTypeDefs = `#graphql
     phone: String
     birthDate: String
     sacraments: [ID!]
-    isCatechist: Boolean
   }
 
   extend type Query {
     getPeople: [Person]
     getPerson(id: ID!): Person
     getPersonByIdCard(idCard: String!): Person
-    getCatechists: [Person]
-    getCatechizands: [Person]
   }
 
   extend type Mutation {
     createPerson(input: PersonInput!): Person
+    createPeopleBulk(input: [PersonInput!]!): [Person]
     updatePerson(id: ID!, input: PersonInput!): Person
     deletePerson(id: ID!): Boolean
+    deletePeopleBulk(ids: [ID!]!): Int
     addSacramentToPerson(personId: ID!, sacramentId: ID!): Person
     removeSacramentFromPerson(personId: ID!, sacramentId: ID!): Person
-    setCatechistStatus(personId: ID!, isCatechist: Boolean!): Person
   }
 `;

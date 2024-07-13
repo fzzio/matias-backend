@@ -32,10 +32,6 @@ const personSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Sacrament",
   }],
-  isCatechist: {
-    type: Boolean,
-    default: false,
-  },
 }, {
   timestamps: true,
 });
