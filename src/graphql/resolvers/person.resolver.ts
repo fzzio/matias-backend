@@ -11,7 +11,8 @@ const personResolvers = {
   Mutation: {
     createPerson: async (_: any, { input }: { input: PersonInput }) => {
       const person = new Person(input);
-      return await person.save();
+      await person.save();
+      return await Person.findById(person.id).populate("sacraments");
     },
     updatePerson: async (_: any, { id, input }: { id: string; input: PersonInput }) => {
       return await Person.findByIdAndUpdate(id, input, { new: true, runValidators: true }).populate("sacraments");
