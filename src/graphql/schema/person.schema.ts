@@ -8,6 +8,7 @@ export const personTypeDefs = `#graphql
     phone: String
     birthDate: String
     sacraments: [Sacrament!]
+    isCatechist: Boolean!
     createdAt: String
     updatedAt: String
   }
@@ -20,6 +21,7 @@ export const personTypeDefs = `#graphql
     phone: String
     birthDate: String
     sacraments: [ID!]
+    isCatechist: Boolean
   }
 
   extend type Query {

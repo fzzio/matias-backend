@@ -100,6 +100,7 @@ export interface PersonInput {
   phone?: string;
   birthDate?: Date;
   sacraments?: string[];
+  isCatechist?: boolean;
 }
 
 export default personResolvers;
