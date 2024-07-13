@@ -3,8 +3,6 @@ import locationResolvers from "./location.resolver.js";
 import personResolvers from "./person.resolver.js";
 import sacramentResolvers from "./sacrament.resolver.js";
 import courseResolvers from "./course.resolver.js";
-import catechistResolvers from "./catechist.resolver.js";
-import catechizandResolvers from "./catechizand.resolver.js";
 
 export const resolvers = {
   Query: {
@@ -13,8 +11,6 @@ export const resolvers = {
     ...personResolvers.Query,
     ...sacramentResolvers.Query,
     ...courseResolvers.Query,
-    ...catechistResolvers.Query,
-    ...catechizandResolvers.Query,
   },
   Mutation: {
     ...catechismLevelResolvers.Mutation,
@@ -22,7 +18,5 @@ export const resolvers = {
     ...personResolvers.Mutation,
     ...sacramentResolvers.Mutation,
     ...courseResolvers.Mutation,
-    ...catechistResolvers.Mutation,
-    ...catechizandResolvers.Mutation,
   },
 };

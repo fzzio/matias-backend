@@ -28,6 +28,10 @@ const personSchema = new mongoose.Schema({
     type: Date,
     required: false,
   },
+  isCatechist: {
+    type: Boolean,
+    default: false,
+  },
   sacraments: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Sacrament",
