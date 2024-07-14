@@ -12,39 +12,28 @@ const personResolvers = {
       return await Person.find({ isCatechist: true }).populate('courses');
     },
     getCatechizands: async (_: any, { year }: { year: string }) => {
-      const courses = await Course.find({ year }).populate('catechizands');
-      const catechizandIds: mongoose.Types.ObjectId[] = [];
+      const catechizandIds = await Course.aggregate([
+        { $match: { year } },
+        { $unwind: "$catechizands" },
+        { $group: { _id: null, allCatechizands: { $addToSet: "$catechizands" } } }
+      ]);
 
-      courses.forEach(course => {
-        course.catechizands.forEach(person => {
-          if (!catechizandIds.includes(person._id)) {
-            catechizandIds.push(person._id);
-          }
-        });
-      });
+      const allCatechizandIds = catechizandIds[0]?.allCatechizands || [];
 
-      return Person.find({ '_id': { $in: catechizandIds } });
+      return Person.find({ '_id': { $in: allCatechizandIds } });
     },
     getNonParticipants: async (_: any, { year }: { year: string }) => {
-      const courses = await Course.find({ year }).populate('catechists catechizands');
+      const participantIds = await Course.aggregate([
+        { $match: { year } },
+        { $project: { participants: { $concatArrays: ["$catechists", "$catechizands"] } } },
+        { $unwind: "$participants" },
+        { $group: { _id: null, allParticipants: { $addToSet: "$participants" } } }
+      ]);
 
-      const participantIds: mongoose.Types.ObjectId[] = [];
-
-      courses.forEach(course => {
-        course.catechists.forEach(person => {
-          if (!participantIds.includes(person._id)) {
-            participantIds.push(person._id);
-          }
-        });
-        course.catechizands.forEach(person => {
-          if (!participantIds.includes(person._id)) {
-            participantIds.push(person._id);
-          }
-        });
-      });
+      const allParticipantIds = participantIds[0]?.allParticipants || [];
 
       return Person.find({
-        '_id': { $nin: participantIds },
+        '_id': { $nin: allParticipantIds },
         'isCatechist': false
       });
     },
@@ -53,10 +42,11 @@ const personResolvers = {
     createPerson: async (_: any, { input }: { input: PersonInput }) => {
       const person = new Person(input);
       await person.save();
-      return await Person.findById(person.id).populate("sacraments");
+      return await Person.findById(person.id).populate("sacraments coursesAsCatechist coursesAsCatechizand");
     },
     updatePerson: async (_: any, { id, input }: { id: string; input: PersonInput }) => {
-      return await Person.findByIdAndUpdate(id, input, { new: true, runValidators: true }).populate("sacraments");
+      return await Person.findByIdAndUpdate(id, input, { new: true, runValidators: true })
+        .populate("sacraments coursesAsCatechist coursesAsCatechizand");
     },
     deletePerson: async (_: any, { id }: { id: string }) => {
       const result = await Person.findByIdAndDelete(id);
@@ -89,6 +79,35 @@ const personResolvers = {
 
       return updatedPerson;
     },
+    addPersonToCourse: async (_: any, { personId, courseId, role }: { personId: string; courseId: string; role: 'catechist' | 'catechizand' }) => {
+      const person = await Person.findById(personId);
+      const course = await Course.findById(courseId);
+
+      if (!person || !course) {
+        throw new Error('Person or Course not found');
+      }
+
+      if (role === 'catechist' && !person.isCatechist) {
+        throw new Error('This person is not a catechist');
+      }
+
+      const updateField = role === 'catechist' ? 'coursesAsCatechist' : 'coursesAsCatechizand';
+      const courseUpdateField = role === 'catechist' ? 'catechists' : 'catechizands';
+
+      await Person.findByIdAndUpdate(personId, { $addToSet: { [updateField]: courseId } });
+      await Course.findByIdAndUpdate(courseId, { $addToSet: { [courseUpdateField]: personId } });
+
+      return Person.findById(personId).populate('coursesAsCatechist coursesAsCatechizand');
+    },
+    removePersonFromCourse: async (_: any, { personId, courseId, role }: { personId: string; courseId: string; role: 'catechist' | 'catechizand' }) => {
+      const updateField = role === 'catechist' ? 'coursesAsCatechist' : 'coursesAsCatechizand';
+      const courseUpdateField = role === 'catechist' ? 'catechists' : 'catechizands';
+
+      await Person.findByIdAndUpdate(personId, { $pull: { [updateField]: courseId } });
+      await Course.findByIdAndUpdate(courseId, { $pull: { [courseUpdateField]: personId } });
+
+      return Person.findById(personId).populate('coursesAsCatechist coursesAsCatechizand');
+    },
   },
 };
 
@@ -101,6 +120,8 @@ export interface PersonInput {
   birthDate?: Date;
   sacraments?: string[];
   isCatechist?: boolean;
+  coursesAsCatechist?: string[];
+  coursesAsCatechizand?: string[];
 }
 
 export default personResolvers;

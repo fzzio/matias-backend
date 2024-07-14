@@ -36,6 +36,14 @@ const personSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Sacrament",
   }],
+  coursesAsCatechist: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Course",
+  }],
+  coursesAsCatechizand: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Course",
+  }],
 }, {
   timestamps: true,
 });
