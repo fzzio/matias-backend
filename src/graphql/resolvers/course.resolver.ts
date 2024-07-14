@@ -20,7 +20,7 @@ const courseResolvers = {
       const result = await Course.findByIdAndDelete(id);
       return !!result;
     },
-    addCatechistToCourse: async (_: any, { courseId, catechistId }: { courseId: string; catechistId: string }) => {
+    assignCatechistToCourse: async (_: any, { courseId, catechistId }: { courseId: string; catechistId: string }) => {
       return await Course.findByIdAndUpdate(courseId, { $addToSet: { catechists: catechistId } }, { new: true }).populate("catechismLevel location catechists catechizands");
     },
     removeCatechistFromCourse: async (_: any, { courseId, catechistId }: { courseId: string; catechistId: string }) => {

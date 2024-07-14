@@ -27,7 +27,7 @@ export const courseTypeDefs = `#graphql
     createCourse(input: CourseInput!): Course
     updateCourse(id: ID!, input: CourseInput!): Course
     deleteCourse(id: ID!): Boolean
-    addCatechistToCourse(courseId: ID!, catechistId: ID!): Course
+    assignCatechistToCourse(courseId: ID!, catechistId: ID!): Course
     removeCatechistFromCourse(courseId: ID!, catechistId: ID!): Course
     addCatechizandToCourse(courseId: ID!, catechizandId: ID!): Course
     removeCatechizandFromCourse(courseId: ID!, catechizandId: ID!): Course
