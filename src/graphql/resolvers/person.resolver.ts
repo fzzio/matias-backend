@@ -5,9 +5,9 @@ import { Person } from "../models/person.model.js";
 
 const personResolvers = {
   Query: {
-    getPeople: async () => await Person.find().populate("sacraments"),
-    getPerson: async (_: any, { id }: { id: string }) => await Person.findById(id).populate("sacraments"),
-    getPersonByIdCard: async (_: any, { idCard }: { idCard: string }) => await Person.findOne({ idCard }).populate("sacraments"),
+    getPeople: async () => await Person.find().populate("sacraments coursesAsCatechist coursesAsCatechizand"),
+    getPerson: async (_: any, { id }: { id: string }) => await Person.findById(id).populate("sacraments coursesAsCatechist coursesAsCatechizand"),
+    getPersonByIdCard: async (_: any, { idCard }: { idCard: string }) => await Person.findOne({ idCard }).populate("sacraments coursesAsCatechist coursesAsCatechizand"),
     getCatechists: async () => {
       return await Person.find({ isCatechist: true }).populate('courses');
     },
