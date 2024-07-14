@@ -1,3 +1,6 @@
+import mongoose from "mongoose";
+
+import { Person } from "../models/person.model.js";
 import { Sacrament } from "../models/sacrament.model.js";
 
 const sacramentResolvers = {
@@ -14,8 +17,30 @@ const sacramentResolvers = {
       return await Sacrament.findByIdAndUpdate(id, { name }, { new: true });
     },
     deleteSacrament: async (_: any, { id }: { id: string }) => {
-      const result = await Sacrament.findByIdAndDelete(id);
-      return !!result;
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        // Remove sacrament from all people
+        await Person.updateMany(
+          { sacraments: id },
+          { $pull: { sacraments: id } }
+        );
+
+        // Delete the sacrament
+        const result = await Sacrament.findByIdAndDelete(id);
+        if (!result) {
+          throw new Error("Sacrament not found");
+        }
+
+        await session.commitTransaction();
+        return true;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
     },
   },
 };

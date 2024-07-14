@@ -49,8 +49,30 @@ const personResolvers = {
         .populate("sacraments coursesAsCatechist coursesAsCatechizand");
     },
     deletePerson: async (_: any, { id }: { id: string }) => {
-      const result = await Person.findByIdAndDelete(id);
-      return !!result;
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        const person = await Person.findById(id);
+        if (!person) throw new Error("Person not found");
+
+        // Remove person from courses
+        await Course.updateMany(
+          { $or: [{ catechists: id }, { catechizands: id }] },
+          { $pull: { catechists: id, catechizands: id } }
+        );
+
+        // Delete the person
+        await Person.findByIdAndDelete(id);
+
+        await session.commitTransaction();
+        return true;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
     },
     addSacramentToPerson: async (_: any, { personId, sacramentId }: { personId: string; sacramentId: string }) => {
       return await Person.findByIdAndUpdate(personId, { $addToSet: { sacraments: sacramentId } }, { new: true }).populate("sacraments");

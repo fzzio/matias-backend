@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 import { Survey } from "../models/survey.model.js";
 
 const surveyResolvers = {
@@ -14,8 +16,27 @@ const surveyResolvers = {
       return await Survey.findByIdAndUpdate(id, input, { new: true }).populate("catechizandsInHousehold nonParticipants");
     },
     deleteSurvey: async (_: any, { id }: { id: string }) => {
-      const result = await Survey.findByIdAndDelete(id);
-      return !!result;
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        // Find the survey
+        const survey = await Survey.findById(id);
+        if (!survey) {
+          throw new Error("Survey not found");
+        }
+
+        // Delete the survey
+        await Survey.findByIdAndDelete(id);
+
+        await session.commitTransaction();
+        return true;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
     },
   },
 };

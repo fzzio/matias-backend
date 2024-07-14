@@ -1,3 +1,4 @@
+import { Course } from "../models/course.model.js";
 import { CatechismLevel } from "../models/catechismLevel.model.js";
 
 const catechismLevelResolvers = {
@@ -14,8 +15,33 @@ const catechismLevelResolvers = {
       return await CatechismLevel.findByIdAndUpdate(id, { name }, { new: true });
     },
     deleteCatechismLevel: async (_: any, { id }: { id: string }) => {
-      const result = await CatechismLevel.findByIdAndDelete(id);
-      return !!result;
+      const session = await CatechismLevel.startSession();
+      session.startTransaction();
+
+      try {
+        // Check if there are any courses using this catechism level
+        const coursesUsingLevel = await Course.countDocuments({ catechismLevel: id });
+
+        if (coursesUsingLevel > 0) {
+          throw new Error(`Cannot delete catechism level. It is being used by ${coursesUsingLevel} course(s).`);
+        }
+
+        // If no courses are using this level, proceed with deletion
+        const result = await CatechismLevel.findByIdAndDelete(id).session(session);
+
+        if (!result) {
+          throw new Error('Catechism level not found');
+        }
+
+        await session.commitTransaction();
+        return true;
+      } catch (error) {
+        await session.abortTransaction();
+        console.error('Error deleting catechism level:', error);
+        throw error;
+      } finally {
+        session.endSession();
+      }
     },
   },
 };

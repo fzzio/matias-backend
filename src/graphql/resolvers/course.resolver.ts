@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 import { Course } from "../models/course.model.js";
 import { Person } from "../models/person.model.js";
 import { CatechismLevel } from "../models/catechismLevel.model.js";
@@ -74,8 +76,30 @@ const courseResolvers = {
       return course.populate("catechismLevel location catechists catechizands");
     },
     deleteCourse: async (_: any, { id }: { id: string }) => {
-      const result = await Course.findByIdAndDelete(id);
-      return !!result;
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        const course = await Course.findById(id);
+        if (!course) throw new Error("Course not found");
+
+        // Remove course from people
+        await Person.updateMany(
+          { $or: [{ coursesAsCatechist: id }, { coursesAsCatechizand: id }] },
+          { $pull: { coursesAsCatechist: id, coursesAsCatechizand: id } }
+        );
+
+        // Delete the course
+        await Course.findByIdAndDelete(id);
+
+        await session.commitTransaction();
+        return true;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
     },
     assignCatechistToCourse: async (_: any, { courseId, catechistId }: { courseId: string; catechistId: string }) => {
       const person = await Person.findById(catechistId);
