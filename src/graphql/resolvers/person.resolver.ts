@@ -9,7 +9,7 @@ const personResolvers = {
     getPerson: async (_: any, { id }: { id: string }) => await Person.findById(id).populate("sacraments coursesAsCatechist coursesAsCatechizand"),
     getPersonByIdCard: async (_: any, { idCard }: { idCard: string }) => await Person.findOne({ idCard }).populate("sacraments coursesAsCatechist coursesAsCatechizand"),
     getCatechists: async () => {
-      return await Person.find({ isCatechist: true }).populate('courses');
+      return await Person.find({ isCatechist: true }).populate('coursesAsCatechist');
     },
     getCatechizands: async (_: any, { year }: { year: string }) => {
       const catechizandIds = await Course.aggregate([
