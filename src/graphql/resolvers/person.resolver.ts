@@ -9,7 +9,7 @@ const personResolvers = {
     getPerson: async (_: any, { id }: { id: string }) => await Person.findById(id).populate("sacraments coursesAsCatechist coursesAsCatechizand"),
     getPersonByIdCard: async (_: any, { idCard }: { idCard: string }) => await Person.findOne({ idCard }).populate("sacraments coursesAsCatechist coursesAsCatechizand"),
     getCatechists: async () => {
-      return await Person.find({ isCatechist: true }).populate('coursesAsCatechist');
+      return await Person.find({ isCatechist: true }).populate('coursesAsCatechist sacraments');
     },
     getCatechizands: async (_: any, { year }: { year: string }) => {
       const catechizandIds = await Course.aggregate([
@@ -20,7 +20,8 @@ const personResolvers = {
 
       const allCatechizandIds = catechizandIds[0]?.allCatechizands || [];
 
-      return Person.find({ '_id': { $in: allCatechizandIds } });
+      return Person.find({ '_id': { $in: allCatechizandIds } })
+        .populate('sacraments');
     },
     getNonParticipants: async (_: any, { year }: { year: string }) => {
       const participantIds = await Course.aggregate([
@@ -35,7 +36,8 @@ const personResolvers = {
       return Person.find({
         '_id': { $nin: allParticipantIds },
         'isCatechist': false
-      });
+      })
+      .populate('sacraments');
     },
   },
   Mutation: {
