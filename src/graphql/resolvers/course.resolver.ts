@@ -7,8 +7,8 @@ import { Location } from "../models/location.model.js";
 
 const courseResolvers = {
   Query: {
-    getCourses: async () => await Course.find().populate("catechismLevel location catechists catechizands"),
-    getCourse: async (_: any, { id }: { id: string }) => await Course.findById(id).populate("catechismLevel location catechists catechizands"),
+    getCourses: async () => await Course.find().populate("catechismLevel location catechists catechumens"),
+    getCourse: async (_: any, { id }: { id: string }) => await Course.findById(id).populate("catechismLevel location catechists catechumens"),
   },
   Mutation: {
     createCourse: async (_: any, { input }: { input: CourseInput }) => {
@@ -21,9 +21,9 @@ const courseResolvers = {
       const catechists = await Person.find({ _id: { $in: input.catechists }, isCatechist: true });
       if (catechists.length !== input.catechists.length) throw new Error("Invalid catechist(s)");
 
-      if (input.catechizands) {
-        const catechizands = await Person.find({ _id: { $in: input.catechizands } });
-        if (catechizands.length !== input.catechizands.length) throw new Error("Invalid catechizand(s)");
+      if (input.catechumens) {
+        const catechumens = await Person.find({ _id: { $in: input.catechumens } });
+        if (catechumens.length !== input.catechumens.length) throw new Error("Invalid catechumen(s)");
       }
 
       const course = new Course(input);
@@ -34,14 +34,14 @@ const courseResolvers = {
         { $addToSet: { coursesAsCatechist: course._id } }
       );
 
-      if (input.catechizands) {
+      if (input.catechumens) {
         await Person.updateMany(
-          { _id: { $in: input.catechizands } },
-          { $addToSet: { coursesAsCatechizand: course._id } }
+          { _id: { $in: input.catechumens } },
+          { $addToSet: { coursesAsCatechumen: course._id } }
         );
       }
 
-      return course.populate("catechismLevel location catechists catechizands");
+      return course.populate("catechismLevel location catechists catechumens");
     },
     updateCourse: async (_: any, { id, input }: { id: string; input: CourseInput }) => {
       const catechismLevel = await CatechismLevel.findById(input.catechismLevel);
@@ -53,9 +53,9 @@ const courseResolvers = {
       const catechists = await Person.find({ _id: { $in: input.catechists }, isCatechist: true });
       if (catechists.length !== input.catechists.length) throw new Error("Invalid catechist(s)");
 
-      if (input.catechizands) {
-        const catechizands = await Person.find({ _id: { $in: input.catechizands } });
-        if (catechizands.length !== input.catechizands.length) throw new Error("Invalid catechizand(s)");
+      if (input.catechumens) {
+        const catechumens = await Person.find({ _id: { $in: input.catechumens } });
+        if (catechumens.length !== input.catechumens.length) throw new Error("Invalid catechumen(s)");
       }
 
       const course = await Course.findByIdAndUpdate(id, input, { new: true, runValidators: true });
@@ -66,14 +66,14 @@ const courseResolvers = {
         { $addToSet: { coursesAsCatechist: course._id } }
       );
 
-      if (input.catechizands) {
+      if (input.catechumens) {
         await Person.updateMany(
-          { _id: { $in: input.catechizands } },
-          { $addToSet: { coursesAsCatechizand: course._id } }
+          { _id: { $in: input.catechumens } },
+          { $addToSet: { coursesAsCatechumen: course._id } }
         );
       }
 
-      return course.populate("catechismLevel location catechists catechizands");
+      return course.populate("catechismLevel location catechists catechumens");
     },
     deleteCourse: async (_: any, { id }: { id: string }) => {
       const session = await mongoose.startSession();
@@ -85,8 +85,8 @@ const courseResolvers = {
 
         // Remove course from people
         await Person.updateMany(
-          { $or: [{ coursesAsCatechist: id }, { coursesAsCatechizand: id }] },
-          { $pull: { coursesAsCatechist: id, coursesAsCatechizand: id } }
+          { $or: [{ coursesAsCatechist: id }, { coursesAsCatechumen: id }] },
+          { $pull: { coursesAsCatechist: id, coursesAsCatechumen: id } }
         );
 
         // Delete the course
@@ -114,7 +114,7 @@ const courseResolvers = {
 
       await Person.findByIdAndUpdate(catechistId, { $addToSet: { coursesAsCatechist: courseId } });
 
-      return course.populate("catechismLevel location catechists catechizands");
+      return course.populate("catechismLevel location catechists catechumens");
     },
     removeCatechistFromCourse: async (_: any, { courseId, catechistId }: { courseId: string; catechistId: string }) => {
       const course = await Course.findByIdAndUpdate(
@@ -126,13 +126,13 @@ const courseResolvers = {
 
       await Person.findByIdAndUpdate(catechistId, { $pull: { coursesAsCatechist: courseId } });
 
-      return course.populate("catechismLevel location catechists catechizands");
+      return course.populate("catechismLevel location catechists catechumens");
     },
-    addCatechizandToCourse: async (_: any, { courseId, catechizandId }: { courseId: string; catechizandId: string }) => {
-      return await Course.findByIdAndUpdate(courseId, { $addToSet: { catechizands: catechizandId } }, { new: true }).populate("catechismLevel location catechists catechizands");
+    addCatechumenToCourse: async (_: any, { courseId, catechumenId }: { courseId: string; catechumenId: string }) => {
+      return await Course.findByIdAndUpdate(courseId, { $addToSet: { catechumens: catechumenId } }, { new: true }).populate("catechismLevel location catechists catechumens");
     },
-    removeCatechizandFromCourse: async (_: any, { courseId, catechizandId }: { courseId: string; catechizandId: string }) => {
-      return await Course.findByIdAndUpdate(courseId, { $pull: { catechizands: catechizandId } }, { new: true }).populate("catechismLevel location catechists catechizands");
+    removeCatechumenFromCourse: async (_: any, { courseId, catechumenId }: { courseId: string; catechumenId: string }) => {
+      return await Course.findByIdAndUpdate(courseId, { $pull: { catechumens: catechumenId } }, { new: true }).populate("catechismLevel location catechists catechumens");
     },
   },
 };
@@ -142,7 +142,7 @@ export interface CourseInput {
   catechismLevel: string;
   location: string;
   catechists: string[];
-  catechizands?: string[];
+  catechumens?: string[];
 }
 
 export default courseResolvers;
