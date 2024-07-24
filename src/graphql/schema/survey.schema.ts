@@ -5,6 +5,8 @@ export const surveyTypeDefs = `#graphql
     catechumensInHousehold: [Person!]!
     nonParticipants: [Person!]!
     observations: String
+    catechists: [Person!]!
+    location: Location!
     createdAt: String
     updatedAt: String
   }
@@ -14,6 +16,8 @@ export const surveyTypeDefs = `#graphql
     catechumensInHousehold: [ID!]!
     nonParticipants: [ID!]!
     observations: String
+    catechists: [ID!]!
+    location: ID!
   }
 
   extend type Query {

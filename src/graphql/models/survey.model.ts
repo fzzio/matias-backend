@@ -18,6 +18,14 @@ const surveySchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  catechists: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Person",
+  }],
+  location: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Location",
+  },
 }, {
   timestamps: true,
 });

@@ -86,8 +86,24 @@ const personResolvers = {
       return await Person.findByIdAndUpdate(personId, { $pull: { sacraments: sacramentId } }, { new: true }).populate("sacraments");
     },
     createPeopleBulk: async (_: any, { input }: { input: PersonInput[] }) => {
-      const people = await Person.insertMany(input);
-      return people;
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        const people = await Person.insertMany(input.map(person => ({
+          ...person,
+          sacraments: person.sacraments,
+        })), { session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return await Person.find({ _id: { $in: people.map(p => p._id) } }).populate('sacraments');
+      } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+      }
     },
     deletePeopleBulk: async (_: any, { ids }: { ids: string[] }) => {
       const result = await Person.deleteMany({ _id: { $in: ids } });

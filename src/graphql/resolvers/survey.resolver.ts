@@ -10,28 +10,21 @@ const surveyResolvers = {
   },
   Mutation: {
     createSurvey: async (_: any, { input }: { input: SurveyInput }) => {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-
       try {
-        // Validate that all person IDs exist
-        const allPersonIds = [...input.catechumensInHousehold, ...input.nonParticipants];
-        const existingPersons = await Person.find({ _id: { $in: allPersonIds } });
+        const survey = new Survey({
+          ...input,
+          nonParticipants: input.nonParticipants,
+          catechumensInHousehold: input.catechumensInHousehold,
+          catechists: input.catechists,
+          location: input.location
+        });
 
-        if (existingPersons.length !== allPersonIds.length) {
-          throw new Error("One or more person IDs are invalid");
-        }
-
-        const survey = new Survey(input);
-        await survey.save({ session });
-
-        await session.commitTransaction();
-        return await survey.populate("catechumensInHousehold nonParticipants");
+        await survey.save();
+        return await Survey.findById(survey._id)
+          .populate("nonParticipants catechumensInHousehold catechists location")
+          .exec();
       } catch (error) {
-        await session.abortTransaction();
         throw error;
-      } finally {
-        session.endSession();
       }
     },
     updateSurvey: async (_: any, { id, input }: { id: string; input: SurveyInput }) => {
@@ -90,6 +83,8 @@ export interface SurveyInput {
   catechumensInHousehold: string[];
   nonParticipants: string[];
   observations?: string;
+  catechists: string[];
+  location: string;
 }
 
 export default surveyResolvers;
