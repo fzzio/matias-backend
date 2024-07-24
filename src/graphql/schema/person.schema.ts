@@ -9,8 +9,9 @@ export const personTypeDefs = `#graphql
     birthDate: String
     sacraments: [Sacrament!]
     isCatechist: Boolean!
+    isVolunteer: Boolean!
     coursesAsCatechist: [Course!]
-    coursesAsCatechizand: [Course!]
+    coursesAsCatechumen: [Course!]
     createdAt: String
     updatedAt: String
   }
@@ -24,6 +25,7 @@ export const personTypeDefs = `#graphql
     birthDate: String
     sacraments: [ID!]
     isCatechist: Boolean
+    isVolunteer: Boolean
   }
 
   extend type Query {
@@ -31,7 +33,8 @@ export const personTypeDefs = `#graphql
     getPerson(id: ID!): Person
     getPersonByIdCard(idCard: String!): Person
     getCatechists: [Person]
-    getCatechizands(year: String!): [Person]
+    getVolunteers: [Person]
+    getCatechumens(year: String!): [Person]
     getNonParticipants(year: String!): [Person]
   }
 

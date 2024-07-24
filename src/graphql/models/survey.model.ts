@@ -5,7 +5,7 @@ const surveySchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  catechizandsInHousehold: [{
+  catechumensInHousehold: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Person",
     required: true,
@@ -17,6 +17,14 @@ const surveySchema = new mongoose.Schema({
   observations: {
     type: String,
     required: false,
+  },
+  catechists: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Person",
+  }],
+  location: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Location",
   },
 }, {
   timestamps: true,

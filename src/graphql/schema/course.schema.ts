@@ -5,7 +5,7 @@ export const courseTypeDefs = `#graphql
     catechismLevel: CatechismLevel!
     location: Location!
     catechists: [Person!]!
-    catechizands: [Person!]
+    catechumens: [Person!]
     createdAt: String
     updatedAt: String
   }
@@ -15,7 +15,7 @@ export const courseTypeDefs = `#graphql
     catechismLevel: ID!
     location: ID!
     catechists: [ID!]!
-    catechizands: [ID!]
+    catechumens: [ID!]
   }
 
   extend type Query {
@@ -29,7 +29,7 @@ export const courseTypeDefs = `#graphql
     deleteCourse(id: ID!): Boolean
     assignCatechistToCourse(courseId: ID!, catechistId: ID!): Course
     removeCatechistFromCourse(courseId: ID!, catechistId: ID!): Course
-    addCatechizandToCourse(courseId: ID!, catechizandId: ID!): Course
-    removeCatechizandFromCourse(courseId: ID!, catechizandId: ID!): Course
+    addCatechumenToCourse(courseId: ID!, catechumenId: ID!): Course
+    removeCatechumenFromCourse(courseId: ID!, catechumenId: ID!): Course
   }
 `;

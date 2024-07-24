@@ -2,18 +2,22 @@ export const surveyTypeDefs = `#graphql
   type Survey {
     id: ID!
     householdSize: Int!
-    catechizandsInHousehold: [Person!]!
-    nonParticipants: [Person]
+    catechumensInHousehold: [Person!]!
+    nonParticipants: [Person!]!
     observations: String
+    catechists: [Person!]!
+    location: Location!
     createdAt: String
     updatedAt: String
   }
 
   input SurveyInput {
     householdSize: Int!
-    catechizandsInHousehold: [ID!]!
-    nonParticipants: [ID]
+    catechumensInHousehold: [ID!]!
+    nonParticipants: [ID!]!
     observations: String
+    catechists: [ID!]!
+    location: ID!
   }
 
   extend type Query {

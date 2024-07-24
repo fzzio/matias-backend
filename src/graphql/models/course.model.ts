@@ -20,7 +20,7 @@ const courseSchema = new mongoose.Schema({
     ref: "Person",
     required: true,
   }],
-  catechizands: [{
+  catechumens: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Person",
   }],

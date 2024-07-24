@@ -32,6 +32,10 @@ const personSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isVolunteer: {
+    type: Boolean,
+    default: false,
+  },
   sacraments: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Sacrament",
@@ -40,7 +44,7 @@ const personSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Course",
   }],
-  coursesAsCatechizand: [{
+  coursesAsCatechumen: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Course",
   }],
