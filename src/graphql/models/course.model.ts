@@ -5,6 +5,14 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  room: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
   catechismLevel: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CatechismLevel",

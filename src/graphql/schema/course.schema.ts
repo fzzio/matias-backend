@@ -2,6 +2,8 @@ export const courseTypeDefs = `#graphql
   type Course {
     id: ID!
     year: String!
+    room: String!
+    description: String
     catechismLevel: CatechismLevel!
     location: Location!
     catechists: [Person!]!
@@ -12,6 +14,8 @@ export const courseTypeDefs = `#graphql
 
   input CourseInput {
     year: String!
+    room: String!
+    description: String
     catechismLevel: ID!
     location: ID!
     catechists: [ID!]!

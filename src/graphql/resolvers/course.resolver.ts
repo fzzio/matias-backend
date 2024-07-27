@@ -139,6 +139,8 @@ const courseResolvers = {
 
 export interface CourseInput {
   year: string;
+  room: string;
+  description: string;
   catechismLevel: string;
   location: string;
   catechists: string[];
