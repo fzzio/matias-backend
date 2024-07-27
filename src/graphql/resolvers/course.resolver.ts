@@ -43,6 +43,55 @@ const courseResolvers = {
 
       return course.populate("catechismLevel location catechists catechumens");
     },
+    createCoursesBulk: async (_: any, { input }: { input: CourseInput[] }) => {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        const createdCourses = [];
+
+        for (const courseInput of input) {
+          const catechismLevel = await CatechismLevel.findById(courseInput.catechismLevel);
+          if (!catechismLevel) throw new Error(`Invalid catechism level for course: ${courseInput.year} - ${courseInput.room}`);
+
+          const location = await Location.findById(courseInput.location);
+          if (!location) throw new Error(`Invalid location for course: ${courseInput.year} - ${courseInput.room}`);
+
+          const catechists = await Person.find({ _id: { $in: courseInput.catechists }, isCatechist: true });
+          if (catechists.length !== courseInput.catechists.length) throw new Error(`Invalid catechist(s) for course: ${courseInput.year} - ${courseInput.room}`);
+
+          if (courseInput.catechumens) {
+            const catechumens = await Person.find({ _id: { $in: courseInput.catechumens } });
+            if (catechumens.length !== courseInput.catechumens.length) throw new Error(`Invalid catechumen(s) for course: ${courseInput.year} - ${courseInput.room}`);
+          }
+
+          const course = new Course(courseInput);
+          await course.save();
+
+          await Person.updateMany(
+            { _id: { $in: courseInput.catechists } },
+            { $addToSet: { coursesAsCatechist: course._id } }
+          );
+
+          if (courseInput.catechumens) {
+            await Person.updateMany(
+              { _id: { $in: courseInput.catechumens } },
+              { $addToSet: { coursesAsCatechumen: course._id } }
+            );
+          }
+
+          createdCourses.push(await course.populate("catechismLevel location catechists catechumens"));
+        }
+
+        await session.commitTransaction();
+        return createdCourses;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
+    },
     updateCourse: async (_: any, { id, input }: { id: string; input: CourseInput }) => {
       const catechismLevel = await CatechismLevel.findById(input.catechismLevel);
       if (!catechismLevel) throw new Error("Invalid catechism level");

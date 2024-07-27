@@ -30,6 +30,7 @@ export const courseTypeDefs = `#graphql
   extend type Mutation {
     createCourse(input: CourseInput!): Course
     updateCourse(id: ID!, input: CourseInput!): Course
+    createCoursesBulk(input: [CourseInput!]!): [Course]
     deleteCourse(id: ID!): Boolean
     assignCatechistToCourse(courseId: ID!, catechistId: ID!): Course
     removeCatechistFromCourse(courseId: ID!, catechistId: ID!): Course
