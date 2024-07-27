@@ -5,7 +5,7 @@ const surveySchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  catechumensInHousehold: [{
+  catechumens: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Person",
     required: true,

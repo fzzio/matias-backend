@@ -2,6 +2,8 @@ export const courseTypeDefs = `#graphql
   type Course {
     id: ID!
     year: String!
+    room: String!
+    description: String
     catechismLevel: CatechismLevel!
     location: Location!
     catechists: [Person!]!
@@ -12,6 +14,8 @@ export const courseTypeDefs = `#graphql
 
   input CourseInput {
     year: String!
+    room: String!
+    description: String
     catechismLevel: ID!
     location: ID!
     catechists: [ID!]!
@@ -26,6 +30,7 @@ export const courseTypeDefs = `#graphql
   extend type Mutation {
     createCourse(input: CourseInput!): Course
     updateCourse(id: ID!, input: CourseInput!): Course
+    createCoursesBulk(input: [CourseInput!]!): [Course]
     deleteCourse(id: ID!): Boolean
     assignCatechistToCourse(courseId: ID!, catechistId: ID!): Course
     removeCatechistFromCourse(courseId: ID!, catechistId: ID!): Course

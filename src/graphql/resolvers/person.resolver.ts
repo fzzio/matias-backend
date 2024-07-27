@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 import { Course } from "../models/course.model.js";
 import { Person } from "../models/person.model.js";
+import { Survey } from "../models/survey.model.js";
 
 const personResolvers = {
   Query: {
@@ -24,7 +25,29 @@ const personResolvers = {
       const allCatechumenIds = catechumenIds[0]?.allCatechumens || [];
 
       return Person.find({ '_id': { $in: allCatechumenIds } })
-        .populate('sacraments');
+        .populate('sacraments coursesAsCatechumen');
+    },
+    getCatechumensWithoutVisit: async (_: any, { year }: any) => {
+      const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
+      const endDate = new Date(`${year}-12-31T23:59:59.999Z`);
+
+      const catechumenIdsWithSurvey = await Survey.distinct("catechumens", {
+        createdAt: { $gte: startDate, $lte: endDate }
+      });
+
+      const allCatechumenIds = await Course.aggregate([
+        { $match: { year } },
+        { $unwind: "$catechumens" },
+        { $group: { _id: null, allCatechumens: { $addToSet: "$catechumens" } } }
+      ]);
+
+      const catechumenIds = allCatechumenIds.length ? allCatechumenIds[0].allCatechumens : [];
+
+      const catechumensWithoutSurvey = catechumenIds.filter((id: { toString: () => mongoose.Types.ObjectId; }) => !catechumenIdsWithSurvey.includes(id.toString()));
+
+      return Person.find({
+        '_id': { $in: catechumensWithoutSurvey }
+      }).populate('sacraments coursesAsCatechumen');
     },
     getNonParticipants: async (_: any, { year }: { year: string }) => {
       const participantIds = await Course.aggregate([

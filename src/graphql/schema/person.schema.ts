@@ -35,6 +35,7 @@ export const personTypeDefs = `#graphql
     getCatechists: [Person]
     getVolunteers: [Person]
     getCatechumens(year: String!): [Person]
+    getCatechumensWithoutVisit(year: String!): [Person]
     getNonParticipants(year: String!): [Person]
   }
 
