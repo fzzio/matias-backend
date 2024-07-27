@@ -2,7 +2,7 @@ export const surveyTypeDefs = `#graphql
   type Survey {
     id: ID!
     householdSize: Int!
-    catechumensInHousehold: [Person!]!
+    catechumens: [Person!]!
     nonParticipants: [Person!]!
     observations: String
     catechists: [Person!]!
@@ -13,7 +13,7 @@ export const surveyTypeDefs = `#graphql
 
   input SurveyInput {
     householdSize: Int!
-    catechumensInHousehold: [ID!]!
+    catechumens: [ID!]!
     nonParticipants: [ID!]!
     observations: String
     catechists: [ID!]!

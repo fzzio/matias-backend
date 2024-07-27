@@ -5,8 +5,8 @@ import { Person } from "../models/person.model.js";
 
 const surveyResolvers = {
   Query: {
-    getSurveys: async () => await Survey.find().populate("catechumensInHousehold nonParticipants"),
-    getSurvey: async (_: any, { id }: { id: string }) => await Survey.findById(id).populate("catechumensInHousehold nonParticipants"),
+    getSurveys: async () => await Survey.find().populate("catechumens nonParticipants"),
+    getSurvey: async (_: any, { id }: { id: string }) => await Survey.findById(id).populate("catechumens nonParticipants"),
   },
   Mutation: {
     createSurvey: async (_: any, { input }: { input: SurveyInput }) => {
@@ -14,14 +14,14 @@ const surveyResolvers = {
         const survey = new Survey({
           ...input,
           nonParticipants: input.nonParticipants,
-          catechumensInHousehold: input.catechumensInHousehold,
+          catechumens: input.catechumens,
           catechists: input.catechists,
           location: input.location
         });
 
         await survey.save();
         return await Survey.findById(survey._id)
-          .populate("nonParticipants catechumensInHousehold catechists location")
+          .populate("nonParticipants catechumens catechists location")
           .exec();
       } catch (error) {
         throw error;
@@ -33,14 +33,14 @@ const surveyResolvers = {
 
       try {
         // Validate that all person IDs exist
-        const allPersonIds = [...input.catechumensInHousehold, ...input.nonParticipants];
+        const allPersonIds = [...input.catechumens, ...input.nonParticipants];
         const existingPersons = await Person.find({ _id: { $in: allPersonIds } });
 
         if (existingPersons.length !== allPersonIds.length) {
           throw new Error("One or more person IDs are invalid");
         }
 
-        const updatedSurvey = await Survey.findByIdAndUpdate(id, input, { new: true, session }).populate("catechumensInHousehold nonParticipants");
+        const updatedSurvey = await Survey.findByIdAndUpdate(id, input, { new: true, session }).populate("catechumens nonParticipants");
 
         if (!updatedSurvey) {
           throw new Error("Survey not found");
@@ -80,7 +80,7 @@ const surveyResolvers = {
 
 export interface SurveyInput {
   householdSize: number;
-  catechumensInHousehold: string[];
+  catechumens: string[];
   nonParticipants: string[];
   observations?: string;
   catechists: string[];
