@@ -145,35 +145,6 @@ const personResolvers = {
 
       return updatedPerson;
     },
-    addPersonToCourse: async (_: any, { personId, courseId, role }: { personId: string; courseId: string; role: 'catechist' | 'catechumen' }) => {
-      const person = await Person.findById(personId);
-      const course = await Course.findById(courseId);
-
-      if (!person || !course) {
-        throw new Error('Person or Course not found');
-      }
-
-      if (role === 'catechist' && !person.isCatechist) {
-        throw new Error('This person is not a catechist');
-      }
-
-      const updateField = role === 'catechist' ? 'coursesAsCatechist' : 'coursesAsCatechumen';
-      const courseUpdateField = role === 'catechist' ? 'catechists' : 'catechumens';
-
-      await Person.findByIdAndUpdate(personId, { $addToSet: { [updateField]: courseId } });
-      await Course.findByIdAndUpdate(courseId, { $addToSet: { [courseUpdateField]: personId } });
-
-      return Person.findById(personId).populate('coursesAsCatechist coursesAsCatechumen');
-    },
-    removePersonFromCourse: async (_: any, { personId, courseId, role }: { personId: string; courseId: string; role: 'catechist' | 'catechumen' }) => {
-      const updateField = role === 'catechist' ? 'coursesAsCatechist' : 'coursesAsCatechumen';
-      const courseUpdateField = role === 'catechist' ? 'catechists' : 'catechumens';
-
-      await Person.findByIdAndUpdate(personId, { $pull: { [updateField]: courseId } });
-      await Course.findByIdAndUpdate(courseId, { $pull: { [courseUpdateField]: personId } });
-
-      return Person.findById(personId).populate('coursesAsCatechist coursesAsCatechumen');
-    },
   },
 };
 

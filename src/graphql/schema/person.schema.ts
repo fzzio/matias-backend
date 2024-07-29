@@ -48,7 +48,5 @@ export const personTypeDefs = `#graphql
     addSacramentToPerson(personId: ID!, sacramentId: ID!): Person
     removeSacramentFromPerson(personId: ID!, sacramentId: ID!): Person
     updateCatechistStatus(personId: ID!, enable: Boolean!): Person
-    addPersonToCourse(personId: ID!, courseId: ID!, role: String!): Person
-    removePersonFromCourse(personId: ID!, courseId: ID!, role: String!): Person
   }
 `;

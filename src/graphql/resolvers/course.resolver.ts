@@ -4,6 +4,7 @@ import { Course } from "../models/course.model.js";
 import { Person } from "../models/person.model.js";
 import { CatechismLevel } from "../models/catechismLevel.model.js";
 import { Location } from "../models/location.model.js";
+import { PersonInput } from "./person.resolver.js";
 
 const courseResolvers = {
   Query: {
@@ -177,8 +178,62 @@ const courseResolvers = {
 
       return course.populate("catechismLevel location catechists catechumens");
     },
-    addCatechumenToCourse: async (_: any, { courseId, catechumenId }: { courseId: string; catechumenId: string }) => {
-      return await Course.findByIdAndUpdate(courseId, { $addToSet: { catechumens: catechumenId } }, { new: true }).populate("catechismLevel location catechists catechumens");
+    createAndAssignCatechumensToCourse: async (_: any, { courseId,  catechumens}: { courseId: string; catechumens: PersonInput[] }) => {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      try {
+        const course = await Course.findById(courseId);
+        if (!course) throw new Error("Course not found");
+
+        const createdCatechumens = await Person.insertMany(catechumens, { session });
+        const catechumenIds = createdCatechumens.map(cat => cat._id);
+
+        await Course.updateOne(
+          { _id: courseId },
+          { $push: { catechumens: { $each: catechumenIds } } },
+          { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return await Course.findById(courseId)
+          .populate('catechismLevel location catechists catechumens')
+          .exec();
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
+    },
+    removeCatechumensFromCourse: async (_: any, { courseId, catechumens }: { courseId: string; catechumens: string[] }) => {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      try {
+        const course = await Course.findById(courseId);
+        if (!course) throw new Error("Course not found");
+
+        await Course.findByIdAndUpdate(
+          courseId,
+          { $pull: { catechumens: { $in: catechumens } } },
+          { new: true, session }
+        );
+
+        await Person.updateMany(
+          { _id: { $in: catechumens } },
+          { $pull: { coursesAsCatechumen: courseId } },
+          { session }
+        );
+
+        await session.commitTransaction();
+        return course.populate("catechismLevel location catechists catechumens");
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
     },
     removeCatechumenFromCourse: async (_: any, { courseId, catechumenId }: { courseId: string; catechumenId: string }) => {
       return await Course.findByIdAndUpdate(courseId, { $pull: { catechumens: catechumenId } }, { new: true }).populate("catechismLevel location catechists catechumens");
