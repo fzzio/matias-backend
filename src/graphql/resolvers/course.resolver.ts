@@ -154,7 +154,7 @@ const courseResolvers = {
     },
     assignCatechistToCourse: async (_: any, { courseId, catechistId }: { courseId: string; catechistId: string }) => {
       const person = await Person.findById(catechistId);
-      if (!person || !person.isCatechist) throw new Error("Invalid catechist");
+      if (!person) throw new Error("Invalid catechist");
 
       const course = await Course.findByIdAndUpdate(
         courseId,

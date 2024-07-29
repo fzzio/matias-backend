@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const personSchema = new mongoose.Schema({
+const catechumenSchema = new mongoose.Schema({
   idCard: {
     type: String,
     required: false,
@@ -28,16 +28,16 @@ const personSchema = new mongoose.Schema({
     type: Date,
     required: false,
   },
-  isVolunteer: {
-    type: Boolean,
-    default: false,
-  },
   sacraments: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Sacrament",
+  }],
+  coursesAsCatechumen: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Course",
   }],
 }, {
   timestamps: true,
 });
 
-export const Person = mongoose.model("Person", personSchema);
+export const Catechumen = mongoose.model("Catechumen", catechumenSchema);

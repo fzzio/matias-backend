@@ -25,12 +25,12 @@ const courseSchema = new mongoose.Schema({
   },
   catechists: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Person",
+    ref: "Catechist",
     required: true,
   }],
   catechumens: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Person",
+    ref: "Catechumen",
   }],
 }, {
   timestamps: true,

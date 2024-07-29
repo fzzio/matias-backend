@@ -1,8 +1,10 @@
-import { personTypeDefs } from "./person.schema.js";
-import { courseTypeDefs } from "./course.schema.js";
-import { sacramentTypeDefs } from "./sacrament.schema.js";
-import { locationTypeDefs } from "./location.schema.js";
 import { catechismLevelTypeDefs } from "./catechismLevel.schema.js";
+import { catechistTypeDefs } from "./catechist.schema.js";
+import { catechumenTypeDefs } from "./catechumen.schema.js";
+import { courseTypeDefs } from "./course.schema.js";
+import { locationTypeDefs } from "./location.schema.js";
+import { personTypeDefs } from "./person.schema.js";
+import { sacramentTypeDefs } from "./sacrament.schema.js";
 import { surveyTypeDefs } from "./survey.schema.js";
 
 
@@ -17,11 +19,13 @@ const rootTypeDefs = `#graphql
 `;
 
 export const typeDefs = `#graphql
-  ${rootTypeDefs}
-  ${personTypeDefs}
-  ${courseTypeDefs}
-  ${sacramentTypeDefs}
-  ${locationTypeDefs}
   ${catechismLevelTypeDefs}
+  ${catechistTypeDefs}
+  ${catechumenTypeDefs}
+  ${courseTypeDefs}
+  ${locationTypeDefs}
+  ${personTypeDefs}
+  ${rootTypeDefs}
+  ${sacramentTypeDefs}
   ${surveyTypeDefs}
 `;

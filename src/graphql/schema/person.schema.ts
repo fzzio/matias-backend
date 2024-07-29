@@ -8,10 +8,7 @@ export const personTypeDefs = `#graphql
     phone: String
     birthDate: String
     sacraments: [Sacrament!]
-    isCatechist: Boolean!
     isVolunteer: Boolean!
-    coursesAsCatechist: [Course!]
-    coursesAsCatechumen: [Course!]
     createdAt: String
     updatedAt: String
   }
@@ -25,7 +22,6 @@ export const personTypeDefs = `#graphql
     birthDate: String
     age: Int
     sacraments: [ID!]
-    isCatechist: Boolean
     isVolunteer: Boolean
   }
 
@@ -33,11 +29,8 @@ export const personTypeDefs = `#graphql
     getPeople: [Person]
     getPerson(id: ID!): Person
     getPersonByIdCard(idCard: String!): Person
-    getCatechists: [Person]
     getVolunteers: [Person]
-    getCatechumens(year: String!): [Person]
-    getCatechumensWithoutVisit(year: String!): [Person]
-    getNonParticipants(year: String!): [Person]
+    getPeopleByYear(year: String!): [Person]
   }
 
   extend type Mutation {
@@ -48,6 +41,5 @@ export const personTypeDefs = `#graphql
     deletePeopleBulk(ids: [ID!]!): Int
     addSacramentToPerson(personId: ID!, sacramentId: ID!): Person
     removeSacramentFromPerson(personId: ID!, sacramentId: ID!): Person
-    updateCatechistStatus(personId: ID!, enable: Boolean!): Person
   }
 `;

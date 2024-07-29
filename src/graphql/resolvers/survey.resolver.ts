@@ -1,19 +1,18 @@
 import mongoose from "mongoose";
 
 import { Survey } from "../models/survey.model.js";
-import { Person } from "../models/person.model.js";
 
 const surveyResolvers = {
   Query: {
-    getSurveys: async () => await Survey.find().populate("catechumens nonParticipants"),
-    getSurvey: async (_: any, { id }: { id: string }) => await Survey.findById(id).populate("catechumens nonParticipants"),
+    getSurveys: async () => await Survey.find().populate("catechumens catechists people"),
+    getSurvey: async (_: any, { id }: { id: string }) => await Survey.findById(id).populate("catechumens catechists people"),
   },
   Mutation: {
     createSurvey: async (_: any, { input }: { input: SurveyInput }) => {
       try {
         const survey = new Survey({
           ...input,
-          nonParticipants: input.nonParticipants,
+          people: input.people,
           catechumens: input.catechumens,
           catechists: input.catechists,
           location: input.location
@@ -21,7 +20,7 @@ const surveyResolvers = {
 
         await survey.save();
         return await Survey.findById(survey._id)
-          .populate("nonParticipants catechumens catechists location")
+          .populate("people catechumens catechists location")
           .exec();
       } catch (error) {
         throw error;
@@ -33,14 +32,8 @@ const surveyResolvers = {
 
       try {
         // Validate that all person IDs exist
-        const allPersonIds = [...input.catechumens, ...input.nonParticipants];
-        const existingPersons = await Person.find({ _id: { $in: allPersonIds } });
-
-        if (existingPersons.length !== allPersonIds.length) {
-          throw new Error("One or more person IDs are invalid");
-        }
-
-        const updatedSurvey = await Survey.findByIdAndUpdate(id, input, { new: true, session }).populate("catechumens nonParticipants");
+        // TODO
+        const updatedSurvey = await Survey.findByIdAndUpdate(id, input, { new: true, session }).populate("catechumens catechists people");
 
         if (!updatedSurvey) {
           throw new Error("Survey not found");
@@ -81,7 +74,7 @@ const surveyResolvers = {
 export interface SurveyInput {
   householdSize: number;
   catechumens: string[];
-  nonParticipants: string[];
+  people: string[];
   observations?: string;
   catechists: string[];
   location: string;
