@@ -5,6 +5,7 @@ import { Person } from "../models/person.model.js";
 import { CatechismLevel } from "../models/catechismLevel.model.js";
 import { Location } from "../models/location.model.js";
 import { PersonInput } from "./person.resolver.js";
+import { generateBirthDateFromAge } from "../../utils/calculate.js";
 
 const courseResolvers = {
   Query: {
@@ -178,14 +179,19 @@ const courseResolvers = {
 
       return course.populate("catechismLevel location catechists catechumens");
     },
-    createAndAssignCatechumensToCourse: async (_: any, { courseId,  catechumens}: { courseId: string; catechumens: PersonInput[] }) => {
+    createAndAssignCatechumensToCourse: async (_: any, { courseId, catechumens }: { courseId: string; catechumens: PersonInput[] }) => {
       const session = await mongoose.startSession();
       session.startTransaction();
       try {
         const course = await Course.findById(courseId);
         if (!course) throw new Error("Course not found");
 
-        const createdCatechumens = await Person.insertMany(catechumens, { session });
+        const processedCatechumens = catechumens.map(cat => ({
+          ...cat,
+          birthDate: cat.birthDate ? cat.birthDate : (cat.age ? generateBirthDateFromAge(parseInt(cat.age)) : undefined)
+        }));
+
+        const createdCatechumens = await Person.insertMany(processedCatechumens, { session });
         const catechumenIds = createdCatechumens.map(cat => cat._id);
 
         await Course.updateOne(

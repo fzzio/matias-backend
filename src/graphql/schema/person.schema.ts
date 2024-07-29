@@ -23,6 +23,7 @@ export const personTypeDefs = `#graphql
     email: String
     phone: String
     birthDate: String
+    age: Int
     sacraments: [ID!]
     isCatechist: Boolean
     isVolunteer: Boolean

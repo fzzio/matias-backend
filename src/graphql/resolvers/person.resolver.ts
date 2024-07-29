@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { Course } from "../models/course.model.js";
 import { Person } from "../models/person.model.js";
 import { Survey } from "../models/survey.model.js";
+import { generateBirthDateFromAge } from "../../utils/calculate.js";
 
 const personResolvers = {
   Query: {
@@ -68,11 +69,19 @@ const personResolvers = {
   },
   Mutation: {
     createPerson: async (_: any, { input }: { input: PersonInput }) => {
-      const person = new Person(input);
+      const { age, ...rest } = input;
+
+      if (!rest.birthDate && age !== undefined) {
+        rest.birthDate = generateBirthDateFromAge(parseInt(age));
+      }
+      const person = new Person(rest);
       await person.save();
       return await Person.findById(person.id).populate("sacraments coursesAsCatechist coursesAsCatechumen");
     },
     updatePerson: async (_: any, { id, input }: { id: string; input: PersonInput }) => {
+      if (!input.birthDate && input.age) {
+        input.birthDate = generateBirthDateFromAge(parseInt(input.age));
+      }
       return await Person.findByIdAndUpdate(id, input, { new: true, runValidators: true })
         .populate("sacraments coursesAsCatechist coursesAsCatechumen");
     },
@@ -113,11 +122,11 @@ const personResolvers = {
       session.startTransaction();
 
       try {
-        const people = await Person.insertMany(input.map(person => ({
+        const processedInput = input.map(person => ({
           ...person,
-          sacraments: person.sacraments,
-        })), { session });
-
+          birthDate: person.birthDate ? person.birthDate : (person.age ? generateBirthDateFromAge(parseInt(person.age)) : undefined)
+        }));
+        const people = await Person.insertMany(processedInput, { session });
         await session.commitTransaction();
         session.endSession();
 
@@ -155,6 +164,7 @@ export interface PersonInput {
   email?: string;
   phone?: string;
   birthDate?: Date;
+  age?: string;
   sacraments?: string[];
   isCatechist?: boolean;
   isVolunteer?: boolean;
