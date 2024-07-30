@@ -46,11 +46,13 @@ const courseResolvers = {
     },
     createAndAssignCatechumensToCourse: async (_: any, { courseId, catechumens }: { courseId: string, catechumens: CatechumenInput[] }) => {
       const session = await mongoose.startSession();
-      session.startTransaction();
-
       try {
-        const course = await Course.findById(courseId);
-        if (!course) throw new Error("Course not found");
+        session.startTransaction();
+
+        const course = await Course.findById(courseId).session(session);
+        if (!course) {
+          throw new Error("Course not found");
+        }
 
         const createdCatechumens = await Promise.all(
           catechumens.map(async (catechumenData) => {
@@ -65,7 +67,6 @@ const courseResolvers = {
         );
 
         const catechumenIds = createdCatechumens.map(c => c._id);
-
         course.catechumens.push(...catechumenIds);
         await course.save({ session });
 
@@ -76,12 +77,13 @@ const courseResolvers = {
         );
 
         await session.commitTransaction();
+        session.endSession();
+
         return course.populate("catechismLevel location catechumens");
       } catch (error) {
         await session.abortTransaction();
-        throw error;
-      } finally {
         session.endSession();
+        throw error;
       }
     },
     createCourse: async (_: any, { input }: { input: CourseInput }) => {
