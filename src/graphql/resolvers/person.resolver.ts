@@ -3,78 +3,85 @@ import mongoose from "mongoose";
 import { Course } from "../models/course.model.js";
 import { Person } from "../models/person.model.js";
 import { Survey } from "../models/survey.model.js";
+import { generateBirthDateFromAge } from "../../utils/calculate.js";
 
 const personResolvers = {
   Query: {
-    getPeople: async () => await Person.find().populate("sacraments coursesAsCatechist coursesAsCatechumen"),
-    getPerson: async (_: any, { id }: { id: string }) => await Person.findById(id).populate("sacraments coursesAsCatechist coursesAsCatechumen"),
-    getPersonByIdCard: async (_: any, { idCard }: { idCard: string }) => await Person.findOne({ idCard }).populate("sacraments coursesAsCatechist coursesAsCatechumen"),
-    getCatechists: async () => {
-      return await Person.find({ isCatechist: true }).populate('coursesAsCatechist sacraments');
-    },
+    getPeople: async () => await Person.find().populate("sacraments surveys"),
+    getPerson: async (_: any, { id }: { id: string }) => await Person.findById(id).populate("sacraments surveys"),
+    getPersonByIdCard: async (_: any, { idCard }: { idCard: string }) => await Person.findOne({ idCard }).populate("sacraments surveys"),
     getVolunteers: async () => {
       return await Person.find({ isVolunteer: true }).populate('sacraments');
     },
-    getCatechumens: async (_: any, { year }: { year: string }) => {
-      const catechumenIds = await Course.aggregate([
-        { $match: { year } },
-        { $unwind: "$catechumens" },
-        { $group: { _id: null, allCatechumens: { $addToSet: "$catechumens" } } }
-      ]);
-
-      const allCatechumenIds = catechumenIds[0]?.allCatechumens || [];
-
-      return Person.find({ '_id': { $in: allCatechumenIds } })
-        .populate('sacraments coursesAsCatechumen');
-    },
-    getCatechumensWithoutVisit: async (_: any, { year }: any) => {
+    getPeopleByYear: async (_: any, { year }: { year: string }) => {
       const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
       const endDate = new Date(`${year}-12-31T23:59:59.999Z`);
 
-      const catechumenIdsWithSurvey = await Survey.distinct("catechumens", {
+      return await Person.find({
         createdAt: { $gte: startDate, $lte: endDate }
-      });
-
-      const allCatechumenIds = await Course.aggregate([
-        { $match: { year } },
-        { $unwind: "$catechumens" },
-        { $group: { _id: null, allCatechumens: { $addToSet: "$catechumens" } } }
-      ]);
-
-      const catechumenIds = allCatechumenIds.length ? allCatechumenIds[0].allCatechumens : [];
-
-      const catechumensWithoutSurvey = catechumenIds.filter((id: { toString: () => mongoose.Types.ObjectId; }) => !catechumenIdsWithSurvey.includes(id.toString()));
-
-      return Person.find({
-        '_id': { $in: catechumensWithoutSurvey }
-      }).populate('sacraments coursesAsCatechumen');
-    },
-    getNonParticipants: async (_: any, { year }: { year: string }) => {
-      const participantIds = await Course.aggregate([
-        { $match: { year } },
-        { $project: { participants: { $concatArrays: ["$catechists", "$catechumens"] } } },
-        { $unwind: "$participants" },
-        { $group: { _id: null, allParticipants: { $addToSet: "$participants" } } }
-      ]);
-
-      const allParticipantIds = participantIds[0]?.allParticipants || [];
-
-      return Person.find({
-        '_id': { $nin: allParticipantIds },
-        'isCatechist': false
-      })
-      .populate('sacraments');
+      }).populate('sacraments');
     },
   },
   Mutation: {
-    createPerson: async (_: any, { input }: { input: PersonInput }) => {
-      const person = new Person(input);
-      await person.save();
-      return await Person.findById(person.id).populate("sacraments coursesAsCatechist coursesAsCatechumen");
+    addSacramentToPerson: async (_: any, { personId, sacramentId }: { personId: string; sacramentId: string }) => {
+      return await Person.findByIdAndUpdate(personId, { $addToSet: { sacraments: sacramentId } }, { new: true }).populate("sacraments");
     },
-    updatePerson: async (_: any, { id, input }: { id: string; input: PersonInput }) => {
-      return await Person.findByIdAndUpdate(id, input, { new: true, runValidators: true })
-        .populate("sacraments coursesAsCatechist coursesAsCatechumen");
+    createPeopleBulk: async (_: any, { input }: { input: PersonInput[] }) => {
+      const session = await mongoose.startSession();
+
+      try {
+        session.startTransaction();
+        const createdPeople = await Promise.all(input.map(async (personData) => {
+          const { age, ...rest } = personData;
+          if (!rest.birthDate && age !== undefined) {
+            rest.birthDate = generateBirthDateFromAge(parseInt(age));
+          }
+          const person = new Person(rest);
+
+          await person.save({ session });
+          return person;
+        }));
+
+        await session.commitTransaction();
+        return createdPeople;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
+    },
+    createPerson: async (_: any, { input }: { input: PersonInput }) => {
+      const { age, ...rest } = input;
+
+      if (!rest.birthDate && age !== undefined) {
+        rest.birthDate = generateBirthDateFromAge(parseInt(age));
+      }
+      const person = new Person(rest);
+      await person.save();
+      return await Person.findById(person.id).populate("sacraments");
+    },
+    deletePeopleBulk: async (_: any, { ids }: { ids: string[] }) => {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        // Remove people from all surveys
+        await Survey.updateMany(
+          { people: { $in: ids } },
+          { $pull: { people: { $in: ids } } }
+        );
+
+        const result = await Person.deleteMany({ _id: { $in: ids } });
+
+        await session.commitTransaction();
+        return result.deletedCount;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
     },
     deletePerson: async (_: any, { id }: { id: string }) => {
       const session = await mongoose.startSession();
@@ -84,13 +91,12 @@ const personResolvers = {
         const person = await Person.findById(id);
         if (!person) throw new Error("Person not found");
 
-        // Remove person from courses
-        await Course.updateMany(
-          { $or: [{ catechists: id }, { catechumens: id }] },
-          { $pull: { catechists: id, catechumens: id } }
+        // Remove person from all surveys
+        await Survey.updateMany(
+          { people: id },
+          { $pull: { people: id } }
         );
 
-        // Delete the person
         await Person.findByIdAndDelete(id);
 
         await session.commitTransaction();
@@ -102,77 +108,15 @@ const personResolvers = {
         session.endSession();
       }
     },
-    addSacramentToPerson: async (_: any, { personId, sacramentId }: { personId: string; sacramentId: string }) => {
-      return await Person.findByIdAndUpdate(personId, { $addToSet: { sacraments: sacramentId } }, { new: true }).populate("sacraments");
-    },
     removeSacramentFromPerson: async (_: any, { personId, sacramentId }: { personId: string; sacramentId: string }) => {
       return await Person.findByIdAndUpdate(personId, { $pull: { sacraments: sacramentId } }, { new: true }).populate("sacraments");
     },
-    createPeopleBulk: async (_: any, { input }: { input: PersonInput[] }) => {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-
-      try {
-        const people = await Person.insertMany(input.map(person => ({
-          ...person,
-          sacraments: person.sacraments,
-        })), { session });
-
-        await session.commitTransaction();
-        session.endSession();
-
-        return await Person.find({ _id: { $in: people.map(p => p._id) } }).populate('sacraments');
-      } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        throw error;
+    updatePerson: async (_: any, { id, input }: { id: string; input: PersonInput }) => {
+      if (!input.birthDate && input.age) {
+        input.birthDate = generateBirthDateFromAge(parseInt(input.age));
       }
-    },
-    deletePeopleBulk: async (_: any, { ids }: { ids: string[] }) => {
-      const result = await Person.deleteMany({ _id: { $in: ids } });
-      return result.deletedCount;
-    },
-    updateCatechistStatus: async (_: any, { personId, enable }: { personId: string; enable: boolean }) => {
-      const updatedPerson = await Person.findByIdAndUpdate(
-        personId,
-        { isCatechist: enable },
-        { new: true, runValidators: true }
-      );
-
-      if (!updatedPerson) {
-        throw new Error('No person found with this ID');
-      }
-
-      return updatedPerson;
-    },
-    addPersonToCourse: async (_: any, { personId, courseId, role }: { personId: string; courseId: string; role: 'catechist' | 'catechumen' }) => {
-      const person = await Person.findById(personId);
-      const course = await Course.findById(courseId);
-
-      if (!person || !course) {
-        throw new Error('Person or Course not found');
-      }
-
-      if (role === 'catechist' && !person.isCatechist) {
-        throw new Error('This person is not a catechist');
-      }
-
-      const updateField = role === 'catechist' ? 'coursesAsCatechist' : 'coursesAsCatechumen';
-      const courseUpdateField = role === 'catechist' ? 'catechists' : 'catechumens';
-
-      await Person.findByIdAndUpdate(personId, { $addToSet: { [updateField]: courseId } });
-      await Course.findByIdAndUpdate(courseId, { $addToSet: { [courseUpdateField]: personId } });
-
-      return Person.findById(personId).populate('coursesAsCatechist coursesAsCatechumen');
-    },
-    removePersonFromCourse: async (_: any, { personId, courseId, role }: { personId: string; courseId: string; role: 'catechist' | 'catechumen' }) => {
-      const updateField = role === 'catechist' ? 'coursesAsCatechist' : 'coursesAsCatechumen';
-      const courseUpdateField = role === 'catechist' ? 'catechists' : 'catechumens';
-
-      await Person.findByIdAndUpdate(personId, { $pull: { [updateField]: courseId } });
-      await Course.findByIdAndUpdate(courseId, { $pull: { [courseUpdateField]: personId } });
-
-      return Person.findById(personId).populate('coursesAsCatechist coursesAsCatechumen');
+      return await Person.findByIdAndUpdate(id, input, { new: true, runValidators: true })
+        .populate("sacraments surveys");
     },
   },
 };
@@ -184,11 +128,9 @@ export interface PersonInput {
   email?: string;
   phone?: string;
   birthDate?: Date;
+  age?: string;
   sacraments?: string[];
-  isCatechist?: boolean;
   isVolunteer?: boolean;
-  coursesAsCatechist?: string[];
-  coursesAsCatechumen?: string[];
 }
 
 export default personResolvers;

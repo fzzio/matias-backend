@@ -8,10 +8,7 @@ export const personTypeDefs = `#graphql
     phone: String
     birthDate: String
     sacraments: [Sacrament!]
-    isCatechist: Boolean!
     isVolunteer: Boolean!
-    coursesAsCatechist: [Course!]
-    coursesAsCatechumen: [Course!]
     createdAt: String
     updatedAt: String
   }
@@ -23,32 +20,26 @@ export const personTypeDefs = `#graphql
     email: String
     phone: String
     birthDate: String
+    age: Int
     sacraments: [ID!]
-    isCatechist: Boolean
     isVolunteer: Boolean
   }
 
   extend type Query {
     getPeople: [Person]
+    getPeopleByYear(year: String!): [Person]
     getPerson(id: ID!): Person
     getPersonByIdCard(idCard: String!): Person
-    getCatechists: [Person]
     getVolunteers: [Person]
-    getCatechumens(year: String!): [Person]
-    getCatechumensWithoutVisit(year: String!): [Person]
-    getNonParticipants(year: String!): [Person]
   }
 
   extend type Mutation {
-    createPerson(input: PersonInput!): Person
-    createPeopleBulk(input: [PersonInput!]!): [Person]
-    updatePerson(id: ID!, input: PersonInput!): Person
-    deletePerson(id: ID!): Boolean
-    deletePeopleBulk(ids: [ID!]!): Int
     addSacramentToPerson(personId: ID!, sacramentId: ID!): Person
+    createPeopleBulk(input: [PersonInput!]!): [Person]
+    createPerson(input: PersonInput!): Person
+    deletePeopleBulk(ids: [ID!]!): Int
+    deletePerson(id: ID!): Boolean
     removeSacramentFromPerson(personId: ID!, sacramentId: ID!): Person
-    updateCatechistStatus(personId: ID!, enable: Boolean!): Person
-    addPersonToCourse(personId: ID!, courseId: ID!, role: String!): Person
-    removePersonFromCourse(personId: ID!, courseId: ID!, role: String!): Person
+    updatePerson(id: ID!, input: PersonInput!): Person
   }
 `;

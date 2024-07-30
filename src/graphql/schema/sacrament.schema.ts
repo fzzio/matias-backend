@@ -5,13 +5,13 @@ export const sacramentTypeDefs = `#graphql
   }
 
   extend type Query {
-    getSacraments: [Sacrament]
     getSacrament(id: ID!): Sacrament
+    getSacraments: [Sacrament]
   }
 
   extend type Mutation {
     createSacrament(name: String!): Sacrament
-    updateSacrament(id: ID!, name: String!): Sacrament
     deleteSacrament(id: ID!): Boolean
+    updateSacrament(id: ID!, name: String!): Sacrament
   }
 `;

@@ -5,16 +5,13 @@ import { Location } from "../models/location.model.js";
 
 const locationResolvers = {
   Query: {
-    getLocations: async () => await Location.find(),
     getLocation: async (_: any, { id }: { id: string }) => await Location.findById(id),
+    getLocations: async () => await Location.find(),
   },
   Mutation: {
     createLocation: async (_: any, { name }: { name: string }) => {
       const location = new Location({ name });
       return await location.save();
-    },
-    updateLocation: async (_: any, { id, name }: { id: string; name: string }) => {
-      return await Location.findByIdAndUpdate(id, { name }, { new: true });
     },
     deleteLocation: async (_: any, { id }: { id: string }) => {
       const session = await mongoose.startSession();
@@ -41,6 +38,9 @@ const locationResolvers = {
       } finally {
         session.endSession();
       }
+    },
+    updateLocation: async (_: any, { id, name }: { id: string; name: string }) => {
+      return await Location.findByIdAndUpdate(id, { name }, { new: true });
     },
   },
 };

@@ -2,10 +2,10 @@ export const surveyTypeDefs = `#graphql
   type Survey {
     id: ID!
     householdSize: Int!
-    catechumens: [Person!]!
-    nonParticipants: [Person!]!
+    catechumens: [Catechumen!]!
+    people: [Person!]!
     observations: String
-    catechists: [Person!]!
+    catechists: [Catechist!]!
     location: Location!
     createdAt: String
     updatedAt: String
@@ -13,21 +13,21 @@ export const surveyTypeDefs = `#graphql
 
   input SurveyInput {
     householdSize: Int!
-    catechumens: [ID!]!
-    nonParticipants: [ID!]!
-    observations: String
     catechists: [ID!]!
     location: ID!
+    catechumens: [ID!]!
+    people: [ID!]!
+    observations: String
   }
 
   extend type Query {
-    getSurveys: [Survey]
     getSurvey(id: ID!): Survey
+    getSurveys: [Survey]
   }
 
   extend type Mutation {
     createSurvey(input: SurveyInput!): Survey
-    updateSurvey(id: ID!, input: SurveyInput!): Survey
     deleteSurvey(id: ID!): Boolean
+    updateSurvey(id: ID!, input: SurveyInput!): Survey
   }
 `;

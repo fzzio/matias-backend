@@ -5,13 +5,13 @@ export const catechismLevelTypeDefs = `#graphql
   }
 
   extend type Query {
-    getCatechismLevels: [CatechismLevel]
     getCatechismLevel(id: ID!): CatechismLevel
+    getCatechismLevels: [CatechismLevel]
   }
 
   extend type Mutation {
     createCatechismLevel(name: String!): CatechismLevel
-    updateCatechismLevel(id: ID!, name: String!): CatechismLevel
     deleteCatechismLevel(id: ID!): Boolean
+    updateCatechismLevel(id: ID!, name: String!): CatechismLevel
   }
 `;

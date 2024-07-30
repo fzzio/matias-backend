@@ -7,10 +7,10 @@ const surveySchema = new mongoose.Schema({
   },
   catechumens: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Person",
+    ref: "Catechumen",
     required: true,
   }],
-  nonParticipants: [{
+  people: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Person",
   }],
@@ -20,7 +20,7 @@ const surveySchema = new mongoose.Schema({
   },
   catechists: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Person",
+    ref: "Catechist",
   }],
   location: {
     type: mongoose.Schema.Types.ObjectId,
