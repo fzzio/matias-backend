@@ -4,8 +4,8 @@ import { Survey } from "../models/survey.model.js";
 
 const surveyResolvers = {
   Query: {
-    getSurveys: async () => await Survey.find().populate("catechumens catechists people"),
     getSurvey: async (_: any, { id }: { id: string }) => await Survey.findById(id).populate("catechumens catechists people"),
+    getSurveys: async () => await Survey.find().populate("catechumens catechists people"),
   },
   Mutation: {
     createSurvey: async (_: any, { input }: { input: SurveyInput }) => {
@@ -26,28 +26,6 @@ const surveyResolvers = {
         throw error;
       }
     },
-    updateSurvey: async (_: any, { id, input }: { id: string; input: SurveyInput }) => {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-
-      try {
-        // Validate that all person IDs exist
-        // TODO
-        const updatedSurvey = await Survey.findByIdAndUpdate(id, input, { new: true, session }).populate("catechumens catechists people");
-
-        if (!updatedSurvey) {
-          throw new Error("Survey not found");
-        }
-
-        await session.commitTransaction();
-        return updatedSurvey;
-      } catch (error) {
-        await session.abortTransaction();
-        throw error;
-      } finally {
-        session.endSession();
-      }
-    },
     deleteSurvey: async (_: any, { id }: { id: string }) => {
       const session = await mongoose.startSession();
       session.startTransaction();
@@ -61,6 +39,28 @@ const surveyResolvers = {
 
         await session.commitTransaction();
         return true;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
+    },
+    updateSurvey: async (_: any, { id, input }: { id: string; input: SurveyInput }) => {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        const survey = await Survey.findByIdAndUpdate(
+          id,
+          { ...input },
+          { new: true, runValidators: true, session }
+        );
+
+        if (!survey) throw new Error("Survey not found");
+
+        await session.commitTransaction();
+        return survey.populate("catechumens catechists people location");
       } catch (error) {
         await session.abortTransaction();
         throw error;

@@ -10,7 +10,11 @@ const catechumenResolvers = {
     getCatechumens: async () => await Catechumen.find().populate("sacraments coursesAsCatechumen"),
     getCatechumen: async (_: any, { id }: { id: string }) => await Catechumen.findById(id).populate("sacraments coursesAsCatechumen"),
     getCatechumenByIdCard: async (_: any, { idCard }: { idCard: string }) => await Catechumen.findOne({ idCard }).populate("sacraments coursesAsCatechumen"),
-    getCatechumensWithoutVisit: async (_: any, { year }: any) => {
+    getCatechumensByYear: async (_: any, { year }: { year: string }) => {
+      const courses = await Course.find({ year }).populate("catechumens");
+      return courses.flatMap(course => course.catechumens);
+    },
+    getCatechumensWithoutVisitByYear: async (_: any, { year }: { year: string }) => {
       const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
       const endDate = new Date(`${year}-12-31T23:59:59.999Z`);
 
@@ -59,15 +63,19 @@ const catechumenResolvers = {
         const catechumen = await Catechumen.findById(id);
         if (!catechumen) throw new Error("Catechumen not found");
 
-        // Remove catechumen from courses
+        // Remove catechumen from all courses
         await Course.updateMany(
-          { $or: [{ catechists: id }, { catechumens: id }] },
-          { $pull: { catechists: id, catechumens: id } },
-          { session }
+          { catechumens: id },
+          { $pull: { catechumens: id } }
         );
 
-        // Delete the catechumen
-        await Catechumen.findByIdAndDelete(id, { session });
+        // Remove catechumen from all surveys
+        await Survey.updateMany(
+          { catechumens: id },
+          { $pull: { catechumens: id } }
+        );
+
+        await Catechumen.findByIdAndDelete(id);
 
         await session.commitTransaction();
         return true;
@@ -89,19 +97,25 @@ const catechumenResolvers = {
       session.startTransaction();
 
       try {
-        const processedInput = input.map(catechumen => ({
-          ...catechumen,
-          birthDate: catechumen.birthDate ? catechumen.birthDate : (catechumen.age ? generateBirthDateFromAge(parseInt(catechumen.age)) : undefined)
-        }));
-        const people = await Catechumen.insertMany(processedInput, { session });
-        await session.commitTransaction();
-        session.endSession();
+        const createdCatechumens = await Promise.all(
+          input.map(async (catechumenData) => {
+            const { age, ...rest } = catechumenData;
+            if (!rest.birthDate && age !== undefined) {
+              rest.birthDate = generateBirthDateFromAge(parseInt(age));
+            }
+            const catechumen = new Catechumen(rest);
+            await catechumen.save({ session });
+            return catechumen;
+          })
+        );
 
-        return await Catechumen.find({ _id: { $in: people.map(p => p._id) } }).populate('sacraments coursesAsCatechumen');
+        await session.commitTransaction();
+        return createdCatechumens;
       } catch (error) {
         await session.abortTransaction();
-        session.endSession();
         throw error;
+      } finally {
+        session.endSession();
       }
     },
     deleteCatechumensBulk: async (_: any, { ids }: { ids: string[] }) => {
@@ -109,15 +123,19 @@ const catechumenResolvers = {
       session.startTransaction();
 
       try {
-        // Remove people from courses
+        // Remove catechumens from all courses
         await Course.updateMany(
-          { $or: [{ catechists: { $in: ids } }, { catechumens: { $in: ids } }] },
-          { $pull: { catechists: { $in: ids }, catechumens: { $in: ids } } },
-          { session }
+          { catechumens: { $in: ids } },
+          { $pull: { catechumens: { $in: ids } } }
         );
 
-        // Delete the people
-        const result = await Catechumen.deleteMany({ _id: { $in: ids } }, { session });
+        // Remove catechumens from all surveys
+        await Survey.updateMany(
+          { catechumens: { $in: ids } },
+          { $pull: { catechumens: { $in: ids } } }
+        );
+
+        const result = await Catechumen.deleteMany({ _id: { $in: ids } });
 
         await session.commitTransaction();
         return result.deletedCount;

@@ -25,87 +25,40 @@ const catechistResolvers = {
       if (!input.birthDate && input.age) {
         input.birthDate = generateBirthDateFromAge(parseInt(input.age));
       }
-      return await Catechist.findByIdAndUpdate(id, input, { new: true, runValidators: true })
-        .populate("sacraments coursesAsCatechist");
+      const catechist = await Catechist.findByIdAndUpdate(id, input, { new: true, runValidators: true });
+      if (!catechist) throw new Error("Catechist not found");
+      return catechist.populate("sacraments coursesAsCatechist");
     },
     deleteCatechist: async (_: any, { id }: { id: string }) => {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-
-      try {
-        const catechist = await Catechist.findById(id);
-        if (!catechist) throw new Error("Catechist not found");
-
-        // Remove catechist from courses
-        await Course.updateMany(
-          { $or: [{ catechists: id }, { catechumens: id }] },
-          { $pull: { catechists: id, catechumens: id } },
-          { session }
-        );
-
-        // Delete the catechist
-        await Catechist.findByIdAndDelete(id, { session });
-
-        await session.commitTransaction();
-        return true;
-      } catch (error) {
-        await session.abortTransaction();
-        throw error;
-      } finally {
-        session.endSession();
-      }
+      const catechist = await Catechist.findByIdAndDelete(id);
+      if (!catechist) throw new Error("Catechist not found");
+      return true;
     },
     addSacramentToCatechist: async (_: any, { catechistId, sacramentId }: { catechistId: string; sacramentId: string }) => {
-      return await Catechist.findByIdAndUpdate(catechistId, { $addToSet: { sacraments: sacramentId } }, { new: true }).populate("sacraments");
+      const catechist = await Catechist.findByIdAndUpdate(
+        catechistId,
+        { $addToSet: { sacraments: sacramentId } },
+        { new: true, runValidators: true }
+      );
+      if (!catechist) throw new Error("Catechist not found");
+      return catechist.populate("sacraments coursesAsCatechist");
     },
     removeSacramentFromCatechist: async (_: any, { catechistId, sacramentId }: { catechistId: string; sacramentId: string }) => {
-      return await Catechist.findByIdAndUpdate(catechistId, { $pull: { sacraments: sacramentId } }, { new: true }).populate("sacraments");
-    },
-    createCatechistsBulk: async (_: any, { input }: { input: CatechistInput[] }) => {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-
-      try {
-        const processedInput = input.map(catechist => ({
-          ...catechist,
-          birthDate: catechist.birthDate ? catechist.birthDate : (catechist.age ? generateBirthDateFromAge(parseInt(catechist.age)) : undefined)
-        }));
-        const catechists = await Catechist.insertMany(processedInput, { session });
-        await session.commitTransaction();
-        session.endSession();
-
-        return await Catechist.find({ _id: { $in: catechists.map(p => p._id) } }).populate('sacraments');
-      } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        throw error;
-      }
-    },
-    deleteCatechistsBulk: async (_: any, { ids }: { ids: string[] }) => {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-
-      try {
-        // Remove catechists from courses
-        await Course.updateMany(
-          { $or: [{ catechists: { $in: ids } }, { catechumens: { $in: ids } }] },
-          { $pull: { catechists: { $in: ids }, catechumens: { $in: ids } } },
-          { session }
-        );
-
-        // Delete the catechists
-        const result = await Catechist.deleteMany({ _id: { $in: ids } }, { session });
-
-        await session.commitTransaction();
-        return result.deletedCount;
-      } catch (error) {
-        await session.abortTransaction();
-        throw error;
-      } finally {
-        session.endSession();
-      }
+      const catechist = await Catechist.findByIdAndUpdate(
+        catechistId,
+        { $pull: { sacraments: sacramentId } },
+        { new: true, runValidators: true }
+      );
+      if (!catechist) throw new Error("Catechist not found");
+      return catechist.populate("sacraments coursesAsCatechist");
     },
   },
+  createCatechistsBulk: async (_: any, { input }: { input: CatechistInput[] }) => {
+    // TODO
+  },
+  deleteCatechistsBulk: async (_: any, { ids }: { ids: string[] }) => {
+    // TODO
+  }
 };
 
 export interface CatechistInput {

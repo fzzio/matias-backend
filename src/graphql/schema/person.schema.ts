@@ -27,19 +27,19 @@ export const personTypeDefs = `#graphql
 
   extend type Query {
     getPeople: [Person]
+    getPeopleByYear(year: String!): [Person]
     getPerson(id: ID!): Person
     getPersonByIdCard(idCard: String!): Person
     getVolunteers: [Person]
-    getPeopleByYear(year: String!): [Person]
   }
 
   extend type Mutation {
-    createPerson(input: PersonInput!): Person
-    createPeopleBulk(input: [PersonInput!]!): [Person]
-    updatePerson(id: ID!, input: PersonInput!): Person
-    deletePerson(id: ID!): Boolean
-    deletePeopleBulk(ids: [ID!]!): Int
     addSacramentToPerson(personId: ID!, sacramentId: ID!): Person
+    createPeopleBulk(input: [PersonInput!]!): [Person]
+    createPerson(input: PersonInput!): Person
+    deletePeopleBulk(ids: [ID!]!): Int
+    deletePerson(id: ID!): Boolean
     removeSacramentFromPerson(personId: ID!, sacramentId: ID!): Person
+    updatePerson(id: ID!, input: PersonInput!): Person
   }
 `;

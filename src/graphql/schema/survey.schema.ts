@@ -13,21 +13,21 @@ export const surveyTypeDefs = `#graphql
 
   input SurveyInput {
     householdSize: Int!
+    catechists: [ID!]!
+    location: ID!
     catechumens: [ID!]!
     people: [ID!]!
     observations: String
-    catechists: [ID!]!
-    location: ID!
   }
 
   extend type Query {
-    getSurveys: [Survey]
     getSurvey(id: ID!): Survey
+    getSurveys: [Survey]
   }
 
   extend type Mutation {
     createSurvey(input: SurveyInput!): Survey
-    updateSurvey(id: ID!, input: SurveyInput!): Survey
     deleteSurvey(id: ID!): Boolean
+    updateSurvey(id: ID!, input: SurveyInput!): Survey
   }
 `;

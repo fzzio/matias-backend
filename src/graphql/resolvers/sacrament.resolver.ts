@@ -5,16 +5,13 @@ import { Sacrament } from "../models/sacrament.model.js";
 
 const sacramentResolvers = {
   Query: {
-    getSacraments: async () => await Sacrament.find(),
     getSacrament: async (_: any, { id }: { id: string }) => await Sacrament.findById(id),
+    getSacraments: async () => await Sacrament.find(),
   },
   Mutation: {
     createSacrament: async (_: any, { name }: { name: string }) => {
       const sacrament = new Sacrament({ name });
       return await sacrament.save();
-    },
-    updateSacrament: async (_: any, { id, name }: { id: string; name: string }) => {
-      return await Sacrament.findByIdAndUpdate(id, { name }, { new: true });
     },
     deleteSacrament: async (_: any, { id }: { id: string }) => {
       const session = await mongoose.startSession();
@@ -41,6 +38,9 @@ const sacramentResolvers = {
       } finally {
         session.endSession();
       }
+    },
+    updateSacrament: async (_: any, { id, name }: { id: string; name: string }) => {
+      return await Sacrament.findByIdAndUpdate(id, { name }, { new: true });
     },
   },
 };

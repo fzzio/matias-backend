@@ -25,20 +25,20 @@ export const catechumenTypeDefs = `#graphql
   }
 
   extend type Query {
-    getCatechumens: [Catechumen]
     getCatechumen(id: ID!): Catechumen
     getCatechumenByIdCard(idCard: String!): Catechumen
-    getCatechumens(year: String!): [Catechumen]
-    getCatechumensWithoutVisit(year: String!): [Catechumen]
+    getCatechumens: [Catechumen]
+    getCatechumensByYear(year: String!): [Catechumen]
+    getCatechumensWithoutVisitByYear(year: String!): [Catechumen]
   }
 
   extend type Mutation {
+    addSacramentToCatechumen(catechumenId: ID!, sacramentId: ID!): Catechumen
     createCatechumen(input: CatechumenInput!): Catechumen
     createCatechumensBulk(input: [CatechumenInput!]!): [Catechumen]
-    updateCatechumen(id: ID!, input: CatechumenInput!): Catechumen
     deleteCatechumen(id: ID!): Boolean
     deleteCatechumensBulk(ids: [ID!]!): Int
-    addSacramentToCatechumen(catechumenId: ID!, sacramentId: ID!): Catechumen
     removeSacramentFromCatechumen(catechumenId: ID!, sacramentId: ID!): Catechumen
+    updateCatechumen(id: ID!, input: CatechumenInput!): Catechumen
   }
 `;

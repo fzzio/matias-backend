@@ -25,18 +25,18 @@ export const catechistTypeDefs = `#graphql
   }
 
   extend type Query {
-    getCatechists: [Catechist]
     getCatechist(id: ID!): Catechist
     getCatechistByIdCard(idCard: String!): Catechist
+    getCatechists: [Catechist]
   }
 
   extend type Mutation {
+    addSacramentToCatechist(catechistId: ID!, sacramentId: ID!): Catechist
     createCatechist(input: CatechistInput!): Catechist
     createCatechistsBulk(input: [CatechistInput!]!): [Catechist]
-    updateCatechist(id: ID!, input: CatechistInput!): Catechist
     deleteCatechist(id: ID!): Boolean
     deleteCatechistsBulk(ids: [ID!]!): Int
-    addSacramentToCatechist(catechistId: ID!, sacramentId: ID!): Catechist
     removeSacramentFromCatechist(catechistId: ID!, sacramentId: ID!): Catechist
+    updateCatechist(id: ID!, input: CatechistInput!): Catechist
   }
 `;

@@ -23,19 +23,21 @@ export const courseTypeDefs = `#graphql
   }
 
   extend type Query {
-    getCourses: [Course]
     getCourse(id: ID!): Course
+    getCourses: [Course]
   }
 
   extend type Mutation {
+    assignCatechistToCourse(courseId: ID!, catechistId: ID!): Course
+    assignCatechumenToCourse(courseId: ID!, catechumenId: ID!): Course
+    createAndAssignCatechumensToCourse(courseId: ID!, catechumens: [CatechumenInput!]!): Course
     createCourse(input: CourseInput!): Course
-    updateCourse(id: ID!, input: CourseInput!): Course
     createCoursesBulk(input: [CourseInput!]!): [Course]
     deleteCourse(id: ID!): Boolean
-    assignCatechistToCourse(courseId: ID!, catechistId: ID!): Course
     removeCatechistFromCourse(courseId: ID!, catechistId: ID!): Course
-    createAndAssignCatechumensToCourse(courseId: ID!, catechumens: [CatechumenInput!]!): Course
-    removeCatechumensFromCourse(courseId: ID!, catechumens: [ID!]!): Course
+    removeCatechistsFromCourse(courseId: ID!, catechistsIds: [ID!]): Course
     removeCatechumenFromCourse(courseId: ID!, catechumenId: ID!): Course
+    removeCatechumensFromCourse(courseId: ID!, catechumensIds: [ID!]!): Course
+    updateCourse(id: ID!, input: CourseInput!): Course
   }
 `;
