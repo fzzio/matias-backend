@@ -28,20 +28,19 @@ const personResolvers = {
     },
     createPeopleBulk: async (_: any, { input }: { input: PersonInput[] }) => {
       const session = await mongoose.startSession();
-      session.startTransaction();
 
       try {
-        const createdPeople = await Promise.all(
-          input.map(async (personData) => {
-            const { age, ...rest } = personData;
-            if (!rest.birthDate && age !== undefined) {
-              rest.birthDate = generateBirthDateFromAge(parseInt(age));
-            }
-            const person = new Person(rest);
-            await person.save({ session });
-            return person;
-          })
-        );
+        session.startTransaction();
+        const createdPeople = await Promise.all(input.map(async (personData) => {
+          const { age, ...rest } = personData;
+          if (!rest.birthDate && age !== undefined) {
+            rest.birthDate = generateBirthDateFromAge(parseInt(age));
+          }
+          const person = new Person(rest);
+
+          await person.save({ session });
+          return person;
+        }));
 
         await session.commitTransaction();
         return createdPeople;
@@ -60,7 +59,7 @@ const personResolvers = {
       }
       const person = new Person(rest);
       await person.save();
-      return await Person.findById(person.id).populate("sacraments surveys");
+      return await Person.findById(person.id).populate("sacraments");
     },
     deletePeopleBulk: async (_: any, { ids }: { ids: string[] }) => {
       const session = await mongoose.startSession();
