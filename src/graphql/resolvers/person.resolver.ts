@@ -31,6 +31,7 @@ const personResolvers = {
 
       try {
         session.startTransaction();
+
         const createdPeople = await Promise.all(input.map(async (personData) => {
           const { age, ...rest } = personData;
           if (!rest.birthDate && age !== undefined) {
@@ -63,9 +64,10 @@ const personResolvers = {
     },
     deletePeopleBulk: async (_: any, { ids }: { ids: string[] }) => {
       const session = await mongoose.startSession();
-      session.startTransaction();
 
       try {
+        session.startTransaction();
+
         // Remove people from all surveys
         await Survey.updateMany(
           { people: { $in: ids } },

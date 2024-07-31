@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 
 import { Person } from "../models/person.model.js";
 import { Sacrament } from "../models/sacrament.model.js";
+import { Catechumen } from "../models/catechumen.model.js";
+import { Catechist } from "../models/catechist.model.js";
 
 const sacramentResolvers = {
   Query: {
@@ -20,6 +22,14 @@ const sacramentResolvers = {
       try {
         // Remove sacrament from all people
         await Person.updateMany(
+          { sacraments: id },
+          { $pull: { sacraments: id } }
+        );
+        await Catechumen.updateMany(
+          { sacraments: id },
+          { $pull: { sacraments: id } }
+        );
+        await Catechist.updateMany(
           { sacraments: id },
           { $pull: { sacraments: id } }
         );

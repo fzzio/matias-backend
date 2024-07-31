@@ -6,8 +6,8 @@ export const courseTypeDefs = `#graphql
     description: String
     catechismLevel: CatechismLevel!
     location: Location!
-    catechists: [Person!]!
-    catechumens: [Person!]
+    catechists: [Catechist!]!
+    catechumens: [Catechumen!]
     createdAt: String
     updatedAt: String
   }

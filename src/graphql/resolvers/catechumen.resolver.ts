@@ -7,12 +7,69 @@ import { generateBirthDateFromAge } from "../../utils/calculate.js";
 
 const catechumenResolvers = {
   Query: {
-    getCatechumens: async () => await Catechumen.find().populate("sacraments coursesAsCatechumen"),
     getCatechumen: async (_: any, { id }: { id: string }) => await Catechumen.findById(id).populate("sacraments coursesAsCatechumen"),
     getCatechumenByIdCard: async (_: any, { idCard }: { idCard: string }) => await Catechumen.findOne({ idCard }).populate("sacraments coursesAsCatechumen"),
+    getCatechumens: async () => await Catechumen.find().populate("sacraments coursesAsCatechumen"),
     getCatechumensByYear: async (_: any, { year }: { year: string }) => {
-      const courses = await Course.find({ year }).populate("catechumens");
-      return courses.flatMap(course => course.catechumens);
+      const courses = await Course.find({ year }).populate({
+        path: 'catechumens',
+        populate: [
+          { path: 'sacraments' },
+          {
+            path: 'coursesAsCatechumen',
+            populate: [
+              { path: 'catechismLevel' },
+              { path: 'location' },
+              { path: 'catechists' }
+            ]
+          }
+        ]
+      });
+
+      const catechumens = courses.flatMap(course =>
+        course.catechumens.map((catechumen: any) => {
+          if (!catechumen || !catechumen._id) {
+            console.error('Invalid catechumen data:', catechumen);
+            return null;
+          }
+
+          return {
+            ...catechumen.toObject(),
+            id: catechumen._id.toString(),
+            coursesAsCatechumen: catechumen.coursesAsCatechumen.map((c: any) => {
+              if (!c || !c._id) {
+                console.error('Invalid course data:', c);
+                return null;
+              }
+
+              return {
+                ...c.toObject(),
+                id: c._id.toString(),
+                location: c.location ? {
+                  ...c.location.toObject(),
+                  id: c.location._id.toString()
+                } : null,
+                catechists: c.catechists ? c.catechists.map((catechist: any) => {
+                  if (!catechist || !catechist._id) {
+                    console.error('Invalid catechist data:', catechist);
+                    return null;
+                  }
+                  return {
+                    ...catechist.toObject(),
+                    id: catechist._id.toString()
+                  };
+                }).filter(Boolean) : [],
+                catechismLevel: c.catechismLevel ? {
+                  ...c.catechismLevel.toObject(),
+                  id: c.catechismLevel._id.toString()
+                } : null
+              };
+            }).filter(Boolean)
+          };
+        }).filter(Boolean)
+      );
+
+      return catechumens;
     },
     getCatechumensWithoutVisitByYear: async (_: any, { year }: { year: string }) => {
       const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
@@ -38,6 +95,9 @@ const catechumenResolvers = {
     },
   },
   Mutation: {
+    addSacramentToCatechumen: async (_: any, { catechumenId, sacramentId }: { catechumenId: string; sacramentId: string }) => {
+      return await Catechumen.findByIdAndUpdate(catechumenId, { $addToSet: { sacraments: sacramentId } }, { new: true }).populate("sacraments coursesAsCatechumen");
+    },
     createCatechumen: async (_: any, { input }: { input: CatechumenInput }) => {
       const { age, ...rest } = input;
 
@@ -48,12 +108,32 @@ const catechumenResolvers = {
       await catechumen.save();
       return await Catechumen.findById(catechumen.id).populate("sacraments coursesAsCatechumen");
     },
-    updateCatechumen: async (_: any, { id, input }: { id: string; input: CatechumenInput }) => {
-      if (!input.birthDate && input.age) {
-        input.birthDate = generateBirthDateFromAge(parseInt(input.age));
+    createCatechumensBulk: async (_: any, { input }: { input: CatechumenInput[] }) => {
+      const session = await mongoose.startSession();
+
+      try {
+        session.startTransaction();
+
+        const createdCatechumens = await Promise.all(
+          input.map(async (catechumenData) => {
+            const { age, ...rest } = catechumenData;
+            if (!rest.birthDate && age !== undefined) {
+              rest.birthDate = generateBirthDateFromAge(parseInt(age));
+            }
+            const catechumen = new Catechumen(rest);
+            await catechumen.save({ session });
+            return catechumen;
+          })
+        );
+
+        await session.commitTransaction();
+        return createdCatechumens;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
       }
-      return await Catechumen.findByIdAndUpdate(id, input, { new: true, runValidators: true })
-        .populate("sacraments coursesAsCatechumen");
     },
     deleteCatechumen: async (_: any, { id }: { id: string }) => {
       const session = await mongoose.startSession();
@@ -86,43 +166,12 @@ const catechumenResolvers = {
         session.endSession();
       }
     },
-    addSacramentToCatechumen: async (_: any, { catechumenId, sacramentId }: { catechumenId: string; sacramentId: string }) => {
-      return await Catechumen.findByIdAndUpdate(catechumenId, { $addToSet: { sacraments: sacramentId } }, { new: true }).populate("sacraments coursesAsCatechumen");
-    },
-    removeSacramentFromCatechumen: async (_: any, { catechumenId, sacramentId }: { catechumenId: string; sacramentId: string }) => {
-      return await Catechumen.findByIdAndUpdate(catechumenId, { $pull: { sacraments: sacramentId } }, { new: true }).populate("sacraments coursesAsCatechumen");
-    },
-    createCatechumensBulk: async (_: any, { input }: { input: CatechumenInput[] }) => {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-
-      try {
-        const createdCatechumens = await Promise.all(
-          input.map(async (catechumenData) => {
-            const { age, ...rest } = catechumenData;
-            if (!rest.birthDate && age !== undefined) {
-              rest.birthDate = generateBirthDateFromAge(parseInt(age));
-            }
-            const catechumen = new Catechumen(rest);
-            await catechumen.save({ session });
-            return catechumen;
-          })
-        );
-
-        await session.commitTransaction();
-        return createdCatechumens;
-      } catch (error) {
-        await session.abortTransaction();
-        throw error;
-      } finally {
-        session.endSession();
-      }
-    },
     deleteCatechumensBulk: async (_: any, { ids }: { ids: string[] }) => {
       const session = await mongoose.startSession();
-      session.startTransaction();
 
       try {
+        session.startTransaction();
+
         // Remove catechumens from all courses
         await Course.updateMany(
           { catechumens: { $in: ids } },
@@ -145,6 +194,16 @@ const catechumenResolvers = {
       } finally {
         session.endSession();
       }
+    },
+    removeSacramentFromCatechumen: async (_: any, { catechumenId, sacramentId }: { catechumenId: string; sacramentId: string }) => {
+      return await Catechumen.findByIdAndUpdate(catechumenId, { $pull: { sacraments: sacramentId } }, { new: true }).populate("sacraments coursesAsCatechumen");
+    },
+    updateCatechumen: async (_: any, { id, input }: { id: string; input: CatechumenInput }) => {
+      if (!input.birthDate && input.age) {
+        input.birthDate = generateBirthDateFromAge(parseInt(input.age));
+      }
+      return await Catechumen.findByIdAndUpdate(id, input, { new: true, runValidators: true })
+        .populate("sacraments coursesAsCatechumen");
     },
   },
 };
