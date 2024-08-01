@@ -1,9 +1,63 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 import { Course } from "../models/course.model.js";
 import { Catechumen } from "../models/catechumen.model.js";
 import { Survey } from "../models/survey.model.js";
 import { generateBirthDateFromAge } from "../../utils/calculate.js";
+
+const populateCatechumenData = async (catechumenIds: Types.ObjectId[]) => {
+  return Catechumen.find({ '_id': { $in: catechumenIds } })
+    .populate('sacraments')
+    .populate({
+      path: 'coursesAsCatechumen',
+      populate: [
+        { path: 'catechismLevel' },
+        { path: 'location' },
+        { path: 'catechists' }
+      ]
+    });
+};
+
+const formatCatechumenData = (catechumen: any) => {
+  if (!catechumen || !catechumen._id) {
+    console.error('Invalid catechumen data:', catechumen);
+    return null;
+  }
+
+  return {
+    ...catechumen.toObject(),
+    id: catechumen._id.toString(),
+    coursesAsCatechumen: catechumen.coursesAsCatechumen.map((c: any) => {
+      if (!c || !c._id) {
+        console.error('Invalid course data:', c);
+        return null;
+      }
+
+      return {
+        ...c.toObject(),
+        id: c._id.toString(),
+        location: c.location ? {
+          ...c.location.toObject(),
+          id: c.location._id.toString()
+        } : null,
+        catechists: c.catechists ? c.catechists.map((catechist: any) => {
+          if (!catechist || !catechist._id) {
+            console.error('Invalid catechist data:', catechist);
+            return null;
+          }
+          return {
+            ...catechist.toObject(),
+            id: catechist._id.toString()
+          };
+        }).filter(Boolean) : [],
+        catechismLevel: c.catechismLevel ? {
+          ...c.catechismLevel.toObject(),
+          id: c.catechismLevel._id.toString()
+        } : null
+      };
+    }).filter(Boolean)
+  };
+};
 
 const catechumenResolvers = {
   Query: {
@@ -27,47 +81,8 @@ const catechumenResolvers = {
       });
 
       const catechumens = courses.flatMap(course =>
-        course.catechumens.map((catechumen: any) => {
-          if (!catechumen || !catechumen._id) {
-            console.error('Invalid catechumen data:', catechumen);
-            return null;
-          }
-
-          return {
-            ...catechumen.toObject(),
-            id: catechumen._id.toString(),
-            coursesAsCatechumen: catechumen.coursesAsCatechumen.map((c: any) => {
-              if (!c || !c._id) {
-                console.error('Invalid course data:', c);
-                return null;
-              }
-
-              return {
-                ...c.toObject(),
-                id: c._id.toString(),
-                location: c.location ? {
-                  ...c.location.toObject(),
-                  id: c.location._id.toString()
-                } : null,
-                catechists: c.catechists ? c.catechists.map((catechist: any) => {
-                  if (!catechist || !catechist._id) {
-                    console.error('Invalid catechist data:', catechist);
-                    return null;
-                  }
-                  return {
-                    ...catechist.toObject(),
-                    id: catechist._id.toString()
-                  };
-                }).filter(Boolean) : [],
-                catechismLevel: c.catechismLevel ? {
-                  ...c.catechismLevel.toObject(),
-                  id: c.catechismLevel._id.toString()
-                } : null
-              };
-            }).filter(Boolean)
-          };
-        }).filter(Boolean)
-      );
+        course.catechumens.map((catechumen: any) => formatCatechumenData(catechumen))
+      ).filter(Boolean);
 
       return catechumens;
     },
@@ -79,6 +94,8 @@ const catechumenResolvers = {
         createdAt: { $gte: startDate, $lte: endDate }
       });
 
+      const catechumenIdsWithSurveySet = new Set(catechumenIdsWithSurvey.map(id => id.toString()));
+
       const allCatechumenIds = await Course.aggregate([
         { $match: { year } },
         { $unwind: "$catechumens" },
@@ -87,11 +104,13 @@ const catechumenResolvers = {
 
       const catechumenIds = allCatechumenIds.length ? allCatechumenIds[0].allCatechumens : [];
 
-      const catechumensWithoutSurvey = catechumenIds.filter((id: { toString: () => mongoose.Types.ObjectId; }) => !catechumenIdsWithSurvey.includes(id.toString()));
+      const catechumensWithoutSurvey = catechumenIds.filter(
+        (id: Types.ObjectId) => !catechumenIdsWithSurveySet.has(id.toString())
+      );
 
-      return Catechumen.find({
-        '_id': { $in: catechumensWithoutSurvey }
-      }).populate('sacraments coursesAsCatechumen');
+      const catechumens = await populateCatechumenData(catechumensWithoutSurvey);
+
+      return catechumens.map(formatCatechumenData).filter(Boolean);
     },
   },
   Mutation: {
