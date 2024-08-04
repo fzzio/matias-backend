@@ -1,17 +1,16 @@
 import mongoose from "mongoose";
 
-import { Course } from "../models/course.model.js";
 import { Person } from "../models/person.model.js";
 import { Survey } from "../models/survey.model.js";
 import { generateBirthDateFromAge } from "../../utils/calculate.js";
 
 const personResolvers = {
   Query: {
-    getPeople: async () => await Person.find().populate("sacraments surveys"),
-    getPerson: async (_: any, { id }: { id: string }) => await Person.findById(id).populate("sacraments surveys"),
-    getPersonByIdCard: async (_: any, { idCard }: { idCard: string }) => await Person.findOne({ idCard }).populate("sacraments surveys"),
+    getPeople: async () => await Person.find().populate("sacraments missingSacraments"),
+    getPerson: async (_: any, { id }: { id: string }) => await Person.findById(id).populate("sacraments missingSacraments"),
+    getPersonByIdCard: async (_: any, { idCard }: { idCard: string }) => await Person.findOne({ idCard }).populate("sacraments missingSacraments"),
     getVolunteers: async () => {
-      return await Person.find({ isVolunteer: true }).populate('sacraments');
+      return await Person.find({ isVolunteer: true }).populate('sacraments missingSacraments');
     },
     getPeopleByYear: async (_: any, { year }: { year: string }) => {
       const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
@@ -19,7 +18,7 @@ const personResolvers = {
 
       return await Person.find({
         createdAt: { $gte: startDate, $lte: endDate }
-      }).populate('sacraments');
+      }).populate('sacraments missingSacraments');
     },
   },
   Mutation: {
@@ -132,6 +131,7 @@ export interface PersonInput {
   birthDate?: Date;
   age?: string;
   sacraments?: string[];
+  missingSacraments?: string[];
   isVolunteer?: boolean;
 }
 
