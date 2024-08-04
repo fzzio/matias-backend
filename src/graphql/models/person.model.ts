@@ -36,6 +36,10 @@ const personSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Sacrament",
   }],
+  missingSacraments: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Sacrament",
+  }],
 }, {
   timestamps: true,
 });

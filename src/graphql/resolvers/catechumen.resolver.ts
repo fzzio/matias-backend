@@ -237,6 +237,7 @@ export interface CatechumenInput {
   age?: string;
   sacraments?: string[];
   coursesAsCatechumen?: string[];
+  location?: string;
 }
 
 export default catechumenResolvers;

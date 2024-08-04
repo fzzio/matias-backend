@@ -8,6 +8,7 @@ export const personTypeDefs = `#graphql
     phone: String
     birthDate: String
     sacraments: [Sacrament!]
+    missingSacraments: [Sacrament!]
     isVolunteer: Boolean!
     createdAt: String
     updatedAt: String
@@ -22,6 +23,7 @@ export const personTypeDefs = `#graphql
     birthDate: String
     age: Int
     sacraments: [ID!]
+    missingSacraments: [ID!]
     isVolunteer: Boolean
   }
 
