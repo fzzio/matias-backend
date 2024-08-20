@@ -7,9 +7,9 @@ import { Survey } from "../models/survey.model.js";
 
 const catechistResolvers = {
   Query: {
-    getCatechist: async (_: any, { id }: { id: string }) => await Catechist.findById(id).populate("sacraments coursesAsCatechist"),
-    getCatechistByIdCard: async (_: any, { idCard }: { idCard: string }) => await Catechist.findOne({ idCard }).populate("sacraments coursesAsCatechist"),
-    getCatechists: async () => await Catechist.find().populate("sacraments coursesAsCatechist"),
+    getCatechist: async (_: any, { id }: { id: string }) => await Catechist.findById(id).populate("sacraments coursesAsCatechist location"),
+    getCatechistByIdCard: async (_: any, { idCard }: { idCard: string }) => await Catechist.findOne({ idCard }).populate("sacraments coursesAsCatechist location"),
+    getCatechists: async () => await Catechist.find().populate("sacraments coursesAsCatechist location"),
   },
   Mutation: {
     addSacramentToCatechist: async (_: any, { catechistId, sacramentId }: { catechistId: string; sacramentId: string }) => {
@@ -29,7 +29,7 @@ const catechistResolvers = {
       }
       const catechist = new Catechist(rest);
       await catechist.save();
-      return await Catechist.findById(catechist.id).populate("sacraments coursesAsCatechist");
+      return await Catechist.findById(catechist.id).populate("sacraments coursesAsCatechist location");
     },
     createCatechistsBulk: async (_: any, { input }: { input: CatechistInput[] }) => {
       const session = await mongoose.startSession();
@@ -125,7 +125,7 @@ const catechistResolvers = {
         { new: true, runValidators: true }
       );
       if (!catechist) throw new Error("Catechist not found");
-      return catechist.populate("sacraments coursesAsCatechist");
+      return catechist.populate("sacraments coursesAsCatechist location");
     },
     updateCatechist: async (_: any, { id, input }: { id: string; input: CatechistInput }) => {
       if (!input.birthDate && input.age) {
@@ -133,7 +133,7 @@ const catechistResolvers = {
       }
       const catechist = await Catechist.findByIdAndUpdate(id, input, { new: true, runValidators: true });
       if (!catechist) throw new Error("Catechist not found");
-      return catechist.populate("sacraments coursesAsCatechist");
+      return catechist.populate("sacraments coursesAsCatechist location");
     },
   },
 };
@@ -148,6 +148,7 @@ export interface CatechistInput {
   age?: string;
   sacraments?: string[];
   coursesAsCatechist?: string[];
+  location?: string;
 }
 
 export default catechistResolvers;

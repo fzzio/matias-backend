@@ -36,6 +36,11 @@ const catechistSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Course",
   }],
+  location: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Location",
+    required: false,
+  },
 }, {
   timestamps: true,
 });

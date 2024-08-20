@@ -9,6 +9,7 @@ export const catechistTypeDefs = `#graphql
     birthDate: String
     sacraments: [Sacrament!]
     coursesAsCatechist: [Course!]
+    location: Location
     createdAt: String
     updatedAt: String
   }
@@ -22,6 +23,7 @@ export const catechistTypeDefs = `#graphql
     birthDate: String
     age: Int
     sacraments: [ID!]
+    location: ID
   }
 
   extend type Query {
