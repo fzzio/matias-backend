@@ -10,6 +10,7 @@ export const catechumenTypeDefs = `#graphql
     sacraments: [Sacrament!]
     coursesAsCatechumen: [Course!]
     location: Location
+    address: String
     createdAt: String
     updatedAt: String
   }
@@ -24,6 +25,7 @@ export const catechumenTypeDefs = `#graphql
     age: Int
     sacraments: [ID!]
     location: ID
+    address: String
   }
 
   extend type Query {

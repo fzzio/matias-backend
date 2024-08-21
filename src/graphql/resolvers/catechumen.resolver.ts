@@ -61,9 +61,9 @@ const formatCatechumenData = (catechumen: any) => {
 
 const catechumenResolvers = {
   Query: {
-    getCatechumen: async (_: any, { id }: { id: string }) => await Catechumen.findById(id).populate("sacraments coursesAsCatechumen"),
-    getCatechumenByIdCard: async (_: any, { idCard }: { idCard: string }) => await Catechumen.findOne({ idCard }).populate("sacraments coursesAsCatechumen"),
-    getCatechumens: async () => await Catechumen.find().populate("sacraments coursesAsCatechumen"),
+    getCatechumen: async (_: any, { id }: { id: string }) => await Catechumen.findById(id).populate("sacraments location coursesAsCatechumen"),
+    getCatechumenByIdCard: async (_: any, { idCard }: { idCard: string }) => await Catechumen.findOne({ idCard }).populate("sacraments location coursesAsCatechumen"),
+    getCatechumens: async () => await Catechumen.find().populate("sacraments location coursesAsCatechumen"),
     getCatechumensByYear: async (_: any, { year }: { year: string }) => {
       const courses = await Course.find({ year }).populate({
         path: 'catechumens',
@@ -238,6 +238,7 @@ export interface CatechumenInput {
   sacraments?: string[];
   coursesAsCatechumen?: string[];
   location?: string;
+  address?: string;
 }
 
 export default catechumenResolvers;
