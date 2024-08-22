@@ -224,6 +224,45 @@ const catechumenResolvers = {
       return await Catechumen.findByIdAndUpdate(id, input, { new: true, runValidators: true })
         .populate("sacraments coursesAsCatechumen");
     },
+    updateCatechumensBulk: async (_: any, { input }: { input: CatechumenUpdateInput[] }) => {
+      const updatedCatechumens = await Promise.all(
+        input.map(async (updateData) => {
+          const { id, age, ...rest } = updateData;
+
+          if (!rest.birthDate && age !== undefined) {
+            rest.birthDate = generateBirthDateFromAge(parseInt(age));
+          }
+
+          if (rest.location === "") {
+            delete rest.location;
+          }
+
+          if (!Array.isArray(rest.sacraments)) {
+            delete rest.sacraments;
+          }
+
+          const updatedCatechumen = await Catechumen.findByIdAndUpdate(id, rest, {
+            new: true,
+            runValidators: true,
+          }).populate({
+            path: "coursesAsCatechumen",
+            populate: [
+              { path: "catechismLevel" },
+              { path: "location" },
+              { path: "catechists" }
+            ]
+          });
+
+          if (!updatedCatechumen) {
+            throw new Error(`Catechumen with id ${id} not found`);
+          }
+
+          return updatedCatechumen;
+        })
+      );
+
+      return updatedCatechumens;
+    },
   },
 };
 
@@ -239,6 +278,10 @@ export interface CatechumenInput {
   coursesAsCatechumen?: string[];
   location?: string;
   address?: string;
+}
+
+interface CatechumenUpdateInput extends CatechumenInput {
+  id: string;
 }
 
 export default catechumenResolvers;
