@@ -6,16 +6,24 @@ import { Survey } from "../models/survey.model.js";
 import { generateBirthDateFromAge } from "../../utils/calculate.js";
 
 const populateCatechumenData = async (catechumenIds: Types.ObjectId[]) => {
-  return Catechumen.find({ '_id': { $in: catechumenIds } })
-    .populate('sacraments')
-    .populate({
-      path: 'coursesAsCatechumen',
-      populate: [
-        { path: 'catechismLevel' },
-        { path: 'location' },
-        { path: 'catechists' }
-      ]
-    });
+  try {
+    const catechumens = await Catechumen.find({ '_id': { $in: catechumenIds } })
+      .populate('sacraments')
+      .populate('location')
+      .populate({
+        path: 'coursesAsCatechumen',
+        populate: [
+          { path: 'catechismLevel' },
+          { path: 'location' },
+          { path: 'catechists' }
+        ]
+      });
+
+    return catechumens;
+  } catch (error) {
+    console.error("[populateCatechumenData] - Error populating data:", error);
+    throw error;
+  }
 };
 
 const formatCatechumenData = (catechumen: any) => {
@@ -61,30 +69,63 @@ const formatCatechumenData = (catechumen: any) => {
 
 const catechumenResolvers = {
   Query: {
-    getCatechumen: async (_: any, { id }: { id: string }) => await Catechumen.findById(id).populate("sacraments location coursesAsCatechumen"),
-    getCatechumenByIdCard: async (_: any, { idCard }: { idCard: string }) => await Catechumen.findOne({ idCard }).populate("sacraments location coursesAsCatechumen"),
-    getCatechumens: async () => await Catechumen.find().populate("sacraments location coursesAsCatechumen"),
+    getCatechumen: async (_: any, { id }: { id: string }) => {
+      return await Catechumen.findById(id)
+        .populate("sacraments")
+        .populate("location")
+        .populate({
+          path: 'coursesAsCatechumen',
+          populate: [
+            { path: 'catechismLevel' },
+            { path: 'location' },
+            { path: 'catechists' }
+          ]
+        });
+    },
+    getCatechumenByIdCard: async (_: any, { idCard }: { idCard: string }) => {
+      return await Catechumen.findOne({ idCard })
+        .populate("sacraments")
+        .populate("location")
+        .populate({
+          path: 'coursesAsCatechumen',
+          populate: [
+            { path: 'catechismLevel' },
+            { path: 'location' },
+            { path: 'catechists' }
+          ]
+        });
+    },
+    getCatechumens: async () => {
+      return await Catechumen.find()
+        .populate("sacraments")
+        .populate("location")
+        .populate({
+          path: 'coursesAsCatechumen',
+          populate: [
+            { path: 'catechismLevel' },
+            { path: 'location' },
+            { path: 'catechists' }
+          ]
+        });
+    },
     getCatechumensByYear: async (_: any, { year }: { year: string }) => {
-      const courses = await Course.find({ year }).populate({
-        path: 'catechumens',
-        populate: [
-          { path: 'sacraments' },
-          {
-            path: 'coursesAsCatechumen',
-            populate: [
-              { path: 'catechismLevel' },
-              { path: 'location' },
-              { path: 'catechists' }
-            ]
-          }
-        ]
-      });
+      const coursesOfYear = await Course.find({ year }).populate("catechumens");
 
-      const catechumens = courses.flatMap(course =>
-        course.catechumens.map((catechumen: any) => formatCatechumenData(catechumen))
+      const catechumenIds = coursesOfYear.flatMap(course =>
+        course.catechumens.map((catechumen: any) => catechumen.id)
       ).filter(Boolean);
 
-      return catechumens;
+      return await Catechumen.find({ '_id': { $in: catechumenIds } })
+        .populate("sacraments")
+        .populate("location")
+        .populate({
+          path: 'coursesAsCatechumen',
+          populate: [
+            { path: 'catechismLevel' },
+            { path: 'location' },
+            { path: 'catechists' }
+          ]
+        });
     },
     getCatechumensWithoutVisitByYear: async (_: any, { year }: { year: string }) => {
       const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
@@ -94,23 +135,25 @@ const catechumenResolvers = {
         createdAt: { $gte: startDate, $lte: endDate }
       });
 
-      const catechumenIdsWithSurveySet = new Set(catechumenIdsWithSurvey.map(id => id.toString()));
+      const allCatechumenIds = await Catechumen.find().distinct('_id');
 
-      const allCatechumenIds = await Course.aggregate([
-        { $match: { year } },
-        { $unwind: "$catechumens" },
-        { $group: { _id: null, allCatechumens: { $addToSet: "$catechumens" } } }
-      ]);
-
-      const catechumenIds = allCatechumenIds.length ? allCatechumenIds[0].allCatechumens : [];
-
-      const catechumensWithoutSurvey = catechumenIds.filter(
-        (id: Types.ObjectId) => !catechumenIdsWithSurveySet.has(id.toString())
+      const catechumenIdsWithoutSurvey = allCatechumenIds.filter(
+        (id: Types.ObjectId) => !catechumenIdsWithSurvey.some(
+          (surveyId) => surveyId.equals(id)
+        )
       );
 
-      const catechumens = await populateCatechumenData(catechumensWithoutSurvey);
-
-      return catechumens.map(formatCatechumenData).filter(Boolean);
+      return await Catechumen.find({ '_id': { $in: catechumenIdsWithoutSurvey } })
+        .populate("sacraments")
+        .populate("location")
+        .populate({
+          path: 'coursesAsCatechumen',
+          populate: [
+            { path: 'catechismLevel' },
+            { path: 'location' },
+            { path: 'catechists' }
+          ]
+        });
     },
   },
   Mutation: {
@@ -125,7 +168,7 @@ const catechumenResolvers = {
       }
       const catechumen = new Catechumen(rest);
       await catechumen.save();
-      return await Catechumen.findById(catechumen.id).populate("sacraments coursesAsCatechumen");
+      return await Catechumen.findById(catechumen.id).populate("sacraments location coursesAsCatechumen");
     },
     createCatechumensBulk: async (_: any, { input }: { input: CatechumenInput[] }) => {
       const session = await mongoose.startSession();
@@ -222,7 +265,7 @@ const catechumenResolvers = {
         input.birthDate = generateBirthDateFromAge(parseInt(input.age));
       }
       return await Catechumen.findByIdAndUpdate(id, input, { new: true, runValidators: true })
-        .populate("sacraments coursesAsCatechumen");
+        .populate("sacraments location coursesAsCatechumen");
     },
     updateCatechumensBulk: async (_: any, { input }: { input: CatechumenUpdateInput[] }) => {
       const updatedCatechumens = await Promise.all(
