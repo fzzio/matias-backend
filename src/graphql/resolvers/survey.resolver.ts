@@ -46,6 +46,37 @@ const surveyResolvers = {
         session.endSession();
       }
     },
+    deleteAllSurveys: async (_: any, { passkey }: { passkey: string }) => {
+      const session = await mongoose.startSession();
+
+      if (passkey !== "DELETE_ALL_SURVEYS") {
+        throw new Error("No autorizado para eliminar");
+      }
+
+      try {
+        session.startTransaction();
+
+        const allSurveyIds = await Survey.find().distinct('_id');
+
+        if (allSurveyIds.length === 0) {
+          throw new Error("No se encontraron encuestas para borrar");
+        }
+
+        const result = await Survey.deleteMany({ _id: { $in: allSurveyIds } });
+
+        await session.commitTransaction();
+        return {
+          success: true,
+          message: `Se han borrado ${result.deletedCount} surveys y sus referencias asociadas.`,
+        };
+      } catch (error) {
+        await session.abortTransaction();
+        console.error("[deleteAllSurveys] - Error deleting all surveys:", error);
+        throw new Error("Error al borrar todos los encuestas y sus referencias.");
+      } finally {
+        session.endSession();
+      }
+    },
     updateSurvey: async (_: any, { id, input }: { id: string; input: SurveyInput }) => {
       const session = await mongoose.startSession();
       session.startTransaction();

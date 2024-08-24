@@ -56,8 +56,14 @@ export const catechumenTypeDefs = `#graphql
     createCatechumensBulk(input: [CatechumenInput!]!): [Catechumen]
     deleteCatechumen(id: ID!): Boolean
     deleteCatechumensBulk(ids: [ID!]!): Int
+    deleteAllCatechumens(passkey: String!): DeleteCatechumensResponse!
     removeSacramentFromCatechumen(catechumenId: ID!, sacramentId: ID!): Catechumen
     updateCatechumen(id: ID!, input: CatechumenInput!): Catechumen
     updateCatechumensBulk(input: [CatechumenUpdateInput!]): [Catechumen]
+  }
+
+  type DeleteCatechumensResponse {
+    success: Boolean!
+    message: String!
   }
 `;

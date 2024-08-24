@@ -41,7 +41,13 @@ export const personTypeDefs = `#graphql
     createPerson(input: PersonInput!): Person
     deletePeopleBulk(ids: [ID!]!): Int
     deletePerson(id: ID!): Boolean
+    deleteAllPeople(passkey: String!): DeletePeopleResponse!
     removeSacramentFromPerson(personId: ID!, sacramentId: ID!): Person
     updatePerson(id: ID!, input: PersonInput!): Person
+  }
+
+  type DeletePeopleResponse {
+    success: Boolean!
+    message: String!
   }
 `;

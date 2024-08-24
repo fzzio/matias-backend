@@ -103,6 +103,47 @@ const catechumenResolvers = {
         session.endSession();
       }
     },
+    deleteAllCatechumens: async (_: any, { passkey }: { passkey: string }) => {
+      const session = await mongoose.startSession();
+
+      if (passkey !== "DELETE_ALL_CATECHUMEN") {
+        throw new Error("No autorizado para eliminar");
+      }
+
+      try {
+        session.startTransaction();
+
+        const allCatechumenIds = await Catechumen.find().distinct('_id');
+
+        if (allCatechumenIds.length === 0) {
+          throw new Error("No se encontraron catecúmenos para borrar");
+        }
+
+        await Course.updateMany(
+          { catechumens: { $in: allCatechumenIds } },
+          { $pull: { catechumens: { $in: allCatechumenIds } } }
+        );
+
+        await Survey.updateMany(
+          { catechumens: { $in: allCatechumenIds } },
+          { $pull: { catechumens: { $in: allCatechumenIds } } }
+        );
+
+        const result = await Catechumen.deleteMany({ _id: { $in: allCatechumenIds } });
+
+        await session.commitTransaction();
+        return {
+          success: true,
+          message: `Se han borrado ${result.deletedCount} catecúmenos y sus referencias asociadas.`,
+        };
+      } catch (error) {
+        await session.abortTransaction();
+        console.error("[deleteAllCatechumens] - Error deleting all catechumens:", error);
+        throw new Error("Error al borrar todos los catecúmenos y sus referencias.");
+      } finally {
+        session.endSession();
+      }
+    },
     deleteCatechumen: async (_: any, { id }: { id: string }) => {
       const session = await mongoose.startSession();
       session.startTransaction();
