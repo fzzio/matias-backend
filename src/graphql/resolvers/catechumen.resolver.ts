@@ -221,7 +221,7 @@ export interface CatechumenInput {
   address?: string;
 }
 
-interface CatechumenUpdateInput extends CatechumenInput {
+export interface CatechumenUpdateInput extends CatechumenInput {
   id: string;
 }
 
