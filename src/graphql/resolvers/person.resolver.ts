@@ -61,6 +61,42 @@ const personResolvers = {
       await person.save();
       return await Person.findById(person.id).populate("sacraments");
     },
+    deleteAllPeople: async (_: any, { passkey }: { passkey: string }) => {
+      const session = await mongoose.startSession();
+
+      if (passkey !== "DELETE_ALL_PEOPLE") {
+        throw new Error("No autorizado para eliminar");
+      }
+
+      try {
+        session.startTransaction();
+
+        const allPeopleIds = await Person.find().distinct('_id');
+
+        if (allPeopleIds.length === 0) {
+          throw new Error("No se encontraron catecúmenos para borrar");
+        }
+
+        await Survey.updateMany(
+          { people: { $in: allPeopleIds } },
+          { $pull: { people: { $in: allPeopleIds } } }
+        );
+
+        const result = await Person.deleteMany({ _id: { $in: allPeopleIds } });
+
+        await session.commitTransaction();
+        return {
+          success: true,
+          message: `Se han borrado ${result.deletedCount} personas y sus referencias asociadas.`,
+        };
+      } catch (error) {
+        await session.abortTransaction();
+        console.error("[deleteAllPeople] - Error deleting all people:", error);
+        throw new Error("Error al borrar todos los personas y sus referencias.");
+      } finally {
+        session.endSession();
+      }
+    },
     deletePeopleBulk: async (_: any, { ids }: { ids: string[] }) => {
       const session = await mongoose.startSession();
 

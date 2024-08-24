@@ -28,6 +28,12 @@ export const surveyTypeDefs = `#graphql
   extend type Mutation {
     createSurvey(input: SurveyInput!): Survey
     deleteSurvey(id: ID!): Boolean
+    deleteAllSurveys(passkey: String!): DeleteSurveysResponse!
     updateSurvey(id: ID!, input: SurveyInput!): Survey
+  }
+
+  type DeleteSurveysResponse {
+    success: Boolean!
+    message: String!
   }
 `;
