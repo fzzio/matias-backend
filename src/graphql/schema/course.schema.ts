@@ -34,6 +34,7 @@ export const courseTypeDefs = `#graphql
     createCourse(input: CourseInput!): Course
     createCoursesBulk(input: [CourseInput!]!): [Course]
     deleteCourse(id: ID!): Boolean
+    removeAllCatechumensFromCourse(courseId: ID!): Course
     removeCatechistFromCourse(courseId: ID!, catechistId: ID!): Course
     removeCatechistsFromCourse(courseId: ID!, catechistsIds: [ID!]): Course
     removeCatechumenFromCourse(courseId: ID!, catechumenId: ID!): Course

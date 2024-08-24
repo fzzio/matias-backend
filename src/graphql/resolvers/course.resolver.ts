@@ -56,11 +56,16 @@ const courseResolvers = {
 
         const createdCatechumens = await Promise.all(
           catechumens.map(async (catechumenData) => {
-            const { age, ...rest } = catechumenData;
+            const { age, location, ...rest } = catechumenData;
             if (!rest.birthDate && age !== undefined) {
               rest.birthDate = generateBirthDateFromAge(parseInt(age));
             }
-            const catechumen = new Catechumen(rest);
+
+            if (location === "") {
+              delete catechumenData.location;
+            }
+
+            const catechumen = new Catechumen({ ...rest, location: location || undefined });
             await catechumen.save({ session });
             return catechumen;
           })
@@ -222,6 +227,28 @@ const courseResolvers = {
         throw error;
       } finally {
         session.endSession();
+      }
+    },
+    removeAllCatechumensFromCourse: async (_: any, { courseId }: { courseId: string }) => {
+      try {
+        const course = await Course.findById(courseId);
+        if (!course) throw new Error("Course not found");
+
+        const catechumenIds = course.catechumens.map((id: any) => id.toString());
+
+        // Remove the course from each catechumen's `coursesAsCatechumen` array
+        await Catechumen.updateMany(
+          { _id: { $in: catechumenIds } },
+          { $pull: { coursesAsCatechumen: courseId } }
+        );
+
+        // Clear the catechumens array in the course document
+        course.catechumens = [];
+        await course.save();
+
+        return course.populate("catechismLevel location catechists catechumens");
+      } catch (error) {
+        throw error;
       }
     },
     removeCatechumenFromCourse: async (_: any, { courseId, catechumenId }: { courseId: string, catechumenId: string }) => {

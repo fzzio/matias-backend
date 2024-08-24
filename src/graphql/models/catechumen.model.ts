@@ -39,7 +39,11 @@ const catechumenSchema = new mongoose.Schema({
   location: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Location",
-    required: false, // TODO change true
+    required: false,
+  },
+  address: {
+    type: String,
+    required: false,
   },
 }, {
   timestamps: true,

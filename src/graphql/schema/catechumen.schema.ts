@@ -10,6 +10,7 @@ export const catechumenTypeDefs = `#graphql
     sacraments: [Sacrament!]
     coursesAsCatechumen: [Course!]
     location: Location
+    address: String
     createdAt: String
     updatedAt: String
   }
@@ -24,6 +25,21 @@ export const catechumenTypeDefs = `#graphql
     age: Int
     sacraments: [ID!]
     location: ID
+    address: String
+  }
+
+  input CatechumenUpdateInput {
+    id: String!
+    idCard: String
+    name: String!
+    lastName: String!
+    email: String
+    phone: String
+    birthDate: String
+    age: Int
+    sacraments: [ID!]
+    location: ID
+    address: String
   }
 
   extend type Query {
@@ -42,5 +58,6 @@ export const catechumenTypeDefs = `#graphql
     deleteCatechumensBulk(ids: [ID!]!): Int
     removeSacramentFromCatechumen(catechumenId: ID!, sacramentId: ID!): Catechumen
     updateCatechumen(id: ID!, input: CatechumenInput!): Catechumen
+    updateCatechumensBulk(input: [CatechumenUpdateInput!]): [Catechumen]
   }
 `;
