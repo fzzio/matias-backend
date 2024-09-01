@@ -1,11 +1,48 @@
-import mongoose from "mongoose";
+import mongoose, { Query } from "mongoose";
 
 import { Survey } from "../models/survey.model.js";
 
+const populateSurveyData = async <T>(query: Query<T, any>): Promise<T> => {
+  try {
+    return await query
+      .populate("catechists")
+      .populate("location")
+      .populate({
+        path: 'catechumens',
+        populate: [
+          {
+            path: 'coursesAsCatechumen',
+            populate: [
+              { path: 'catechismLevel' },
+              { path: 'location' },
+              { path: 'catechists' }
+            ]
+          },
+          { path: 'location' },
+          { path: 'sacraments' },
+        ]
+      })
+      .populate({
+        path: 'people',
+        populate: [
+          { path: 'sacraments' },
+          { path: 'missingSacraments' },
+        ]
+      });
+  } catch (error) {
+    console.error("[populateSurveyData] - Error populating data:", error);
+    throw error;
+  }
+};
+
 const surveyResolvers = {
   Query: {
-    getSurvey: async (_: any, { id }: { id: string }) => await Survey.findById(id).populate("catechumens catechists people"),
-    getSurveys: async () => await Survey.find().populate("catechumens catechists people"),
+    getSurvey: async (_: any, { id }: { id: string }) => {
+      return await populateSurveyData(Survey.findById(id));
+    },
+    getSurveys: async () => {
+      return await populateSurveyData(Survey.find());
+    },
   },
   Mutation: {
     createSurvey: async (_: any, { input }: { input: SurveyInput }) => {
