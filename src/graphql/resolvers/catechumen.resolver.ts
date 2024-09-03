@@ -211,7 +211,15 @@ const catechumenResolvers = {
       if (!input.birthDate && input.age) {
         input.birthDate = generateBirthDateFromAge(parseInt(input.age));
       }
-      return await populateCatechumenData(Catechumen.findByIdAndUpdate(id, input, { new: true, runValidators: true }));
+
+      return await populateCatechumenData(Catechumen.findByIdAndUpdate(
+        id,
+        { $set: input },
+        {
+          new: true,
+          runValidators: true
+        }
+      ));
     },
     updateCatechumensBulk: async (_: any, { input }: { input: CatechumenUpdateInput[] }) => {
       const updatedCatechumens = await Promise.all(
@@ -230,10 +238,14 @@ const catechumenResolvers = {
             delete rest.sacraments;
           }
 
-          const updatedCatechumen = populateCatechumenData(Catechumen.findByIdAndUpdate(id, rest, {
-            new: true,
-            runValidators: true,
-          }));
+          const updatedCatechumen = populateCatechumenData(Catechumen.findByIdAndUpdate(
+            id,
+            { $set: rest },
+            {
+              new: true,
+              runValidators: true,
+            }
+          ));
 
           if (!updatedCatechumen) {
             throw new Error(`Catechumen with id ${id} not found`);
