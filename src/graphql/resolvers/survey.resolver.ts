@@ -5,7 +5,6 @@ import { Survey } from "../models/survey.model.js";
 const populateSurveyData = async <T>(query: Query<T, any>): Promise<T> => {
   try {
     return await query
-      .populate("catechists")
       .populate("location")
       .populate({
         path: 'catechumens',
@@ -19,6 +18,12 @@ const populateSurveyData = async <T>(query: Query<T, any>): Promise<T> => {
             ]
           },
           { path: 'location' },
+          { path: 'sacraments' },
+        ]
+      })
+      .populate({
+        path: 'catechists',
+        populate: [
           { path: 'sacraments' },
         ]
       })

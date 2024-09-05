@@ -274,7 +274,7 @@ export interface CatechumenInput {
   address?: string;
 }
 
-export interface CatechumenUpdateInput extends CatechumenInput {
+export interface CatechumenUpdateInput extends Partial<CatechumenInput> {
   id: string;
 }
 
